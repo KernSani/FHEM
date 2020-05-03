@@ -1124,7 +1124,7 @@ sub parseInfo {
             }
             elsif ( $key eq "errors" ) {
                 foreach my $dp ( @{ $info{$key} } ) {
-                    my $mkey = 'message_' . makeReadingName( md5($dp->{date}) );
+                    my $mkey = 'message_' . makeReadingName( unpack('L',md5($dp->{date})) );
 
                     #next if (ReadingsVal($name,$mkey.'_date','') eq '');
                     readingsBulkUpdate( $hash, $mkey . '_date',       $dp->{date} );
