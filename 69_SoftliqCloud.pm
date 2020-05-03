@@ -457,7 +457,7 @@ sub Attr {
 sub refill {
     my $hash  = shift;
     my $name = $hash->{NAME};
-    readingsSingleUpdate( $hash, "lastRefill", ReadingsVal($name, 'msaltusage', 0 );
+    readingsSingleUpdate( $hash, "lastRefill", ReadingsVal($name, 'msaltusage', 0 ));
     return;
 }
 sub setParam {
