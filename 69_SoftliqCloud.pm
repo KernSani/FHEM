@@ -45,6 +45,7 @@ use POSIX qw( strftime );
 use DevIo;
 use B qw(svref_2object);
 use utf8;
+use Digest::MD5 qw(md5);
 
 my $missingModul = '';
 eval 'use MIME::Base64::URLSafe;1'       or $missingModul .= 'MIME::Base64::URLSafe ';
@@ -1123,7 +1124,7 @@ sub parseInfo {
             }
             elsif ( $key eq "errors" ) {
                 foreach my $dp ( @{ $info{$key} } ) {
-                    my $mkey = 'message_' . makeReadingName( $dp->{date} );
+                    my $mkey = 'message_' . makeReadingName( md5($dp->{date}) );
 
                     #next if (ReadingsVal($name,$mkey.'_date','') eq '');
                     readingsBulkUpdate( $hash, $mkey . '_date',       $dp->{date} );
