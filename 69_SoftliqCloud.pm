@@ -622,8 +622,6 @@ sub authenticate {
     $auth_code_challenge =~ s/\=//xsm;
     readingsSingleUpdate( $hash, 'code_challenge', $auth_code_verifier, 0 );
 
-    
-
     my $param->{header} = {
         "Accept"          => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Encoding" => "br, gzip, deflate",
@@ -858,7 +856,6 @@ sub initToken {
         . "&redirect_uri=msal5a83cc16-ffb1-42e9-9859-9fbf07f36df8%3A%2F%2Fauth"
         . "&client_id=5a83cc16-ffb1-42e9-9859-9fbf07f36df8";
 
-    
     $newparam->{httpversion} = '1.1';
     $newparam->{data}        = $newdata;
     $newparam->{hash}        = $hash;
@@ -1124,14 +1121,15 @@ sub parseInfo {
                     $i++;
                 }
             }
-            elsif ($key eq "error") {
+            elsif ( $key eq "errors" ) {
                 foreach my $dp ( @{ $info{$key} } ) {
-                    $mkey = 'message_'.makeReadingName($dp->{date});
+                    my $mkey = 'message_' . makeReadingName( $dp->{date} );
+
                     #next if (ReadingsVal($name,$mkey.'_date','') eq '');
-                    readingsBulkUpdate( $hash, $mkey . '_date',  $dp->{date} );
-                    readingsBulkUpdate( $hash, $mkey . '_isResolved',  $dp->{isResolved} );
-                    readingsBulkUpdate( $hash, $mkey . '_message',  $dp->{message} );
-                    readingsBulkUpdate( $hash, $mkey . '_type',  $dp->{type} );
+                    readingsBulkUpdate( $hash, $mkey . '_date',       $dp->{date} );
+                    readingsBulkUpdate( $hash, $mkey . '_isResolved', $dp->{isResolved} );
+                    readingsBulkUpdate( $hash, $mkey . '_message',    $dp->{message} );
+                    readingsBulkUpdate( $hash, $mkey . '_type',       $dp->{type} );
                 }
             }
         }
@@ -1570,7 +1568,6 @@ sub wsConnect {
     $hash->{helper}{url} = $url;
     $hash->{SSL}         = 1;
     $hash->{WEBSOCKET}   = 1;
-    
 
     #DevIo_CloseDev($hash) if ( DevIo_IsOpen($hash) );
     DevIo_OpenDev( $hash, 0, "FHEM::SoftliqCloud::wsHandshake", "FHEM::SoftliqCloud::wsFail" );
