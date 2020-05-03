@@ -112,6 +112,7 @@ BEGIN {
             defs
             HOURSECONDS
             MINUTESECONDS
+            makeReadingName
             )
     );
 }
@@ -1121,6 +1122,16 @@ sub parseInfo {
                     readingsBulkUpdate( $hash, $key . "_" . $i . "_date",  $dp->{date} );
                     readingsBulkUpdate( $hash, $key . "_" . $i . "_value", $dp->{value} );
                     $i++;
+                }
+            }
+            elsif ($key eq "error") {
+                foreach my $dp ( @{ $info{$key} } ) {
+                    $mkey = 'message_'.makeReadingName($dp->{date});
+                    #next if (ReadingsVal($name,$mkey.'_date','') eq '');
+                    readingsBulkUpdate( $hash, $mkey . '_date',  $dp->{date} );
+                    readingsBulkUpdate( $hash, $mkey . '_isResolved',  $dp->{isResolved} );
+                    readingsBulkUpdate( $hash, $mkey . '_message',  $dp->{message} );
+                    readingsBulkUpdate( $hash, $mkey . '_type',  $dp->{type} );
                 }
             }
         }
