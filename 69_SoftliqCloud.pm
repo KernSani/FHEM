@@ -323,8 +323,13 @@ sub Set {
         regenerate($hash);
         return;
     }
+    if ( $cmd eq 'refill' ) {
+        refill($hash);
+        return;
+    }
 
-    return qq (Unknown argument $cmd, choose one of param regenerate:noArg);
+
+    return qq (Unknown argument $cmd, choose one of param regenerate:noArg refill:noArg);
 
 }
 ###################################
@@ -449,6 +454,12 @@ sub Attr {
 }
 
 ###################################
+sub refill {
+    my $hash  = shift;
+    my $name = $hash->{NAME};
+    readingsSingleUpdate( $hash, "lastRefill", ReadingsVal($name, 'msaltusage', 0 );
+    return;
+}
 sub setParam {
     my $hash  = shift;
     my $param = shift;
@@ -1599,6 +1610,10 @@ sub parseWebsocketRead {
             if ( $key =~ /2$/x and AttrVal( $name, 'sq_duplex', '0' ) eq '0' ) {
                 next;
             }
+            if ( $key eq 'msaltusage' ) {    
+                my $diff = $info{$key} - ReadingsNum($name,"lastRefill", 0);
+                readingsBulkUpdate ($hash, 'saltUsageSinceRefill', $diff);
+            }            
             readingsBulkUpdate( $hash, $key, $info{$key} );
         }
         readingsEndUpdate( $hash, 1 );
