@@ -109,6 +109,8 @@ BEGIN {
             DevIo_SimpleRead
             init_done
             readingFnAttributes
+            setKeyValue
+            getKeyValue
             getUniqueId
             defs
             HOURSECONDS
@@ -235,6 +237,7 @@ sub Initialize {
     $hash->{NotifyFn} = \&Notify;
     $hash->{UndefFn}  = \&Undefine;
     $hash->{AttrFn}   = \&Attr;
+    $hash->{RenameFn} = \&Rename;
     my @SQattr = ( "sq_interval", "disable:0,1", "sq_duplex:0,1" );
 
     $hash->{AttrList} = join( ' ', @SQattr ) . ' ' . $readingFnAttributes;
@@ -255,21 +258,18 @@ sub Define {
     return "Cannot define device. Please install perl modules $missingModul."
         if ($missingModul);
 
-    my $usage = "syntax: define <name> SoftliqCloud <loginName> <password>";
-    return $usage if ( @args != 4 );
+    my $usage = qq (syntax: define <name> SoftliqCloud <loginName>);
+    return $usage if ( @args != 3 );
 
-    my ( $name, $type, $user, $pass ) = @args;
+    my ( $name, $type, $user ) = @args;
 
     Log3 $name, LOG_SEND, "[$name] SoftliqCloud defined $name";
 
     $hash->{NAME} = $name;
     $hash->{USER} = $user;
-    my $crypt = encryptPW($pass);
-    $hash->{PASS} = $crypt;
-    $hash->{DEF}  = qq($user $crypt);
 
     #start timer
-    if ( !IsDisabled($name) && $init_done ) {
+    if ( !IsDisabled($name) && $init_done && defined( ReadPassword($hash) ) ) {
         my $next = int( gettimeofday() ) + 1;
         InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
     }
@@ -327,7 +327,16 @@ sub Set {
         refill($hash);
         return;
     }
+    if ( $cmd eq 'password' ) {
 
+        my $err = StorePassword( $hash, $val );
+        if ( !IsDisabled($name) && defined( ReadPassword($hash) ) ) {
+            my $next = int( gettimeofday() ) + 1;
+            InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
+        }
+        return $err;
+
+    }
 
     return qq (Unknown argument $cmd, choose one of param regenerate:noArg refill:noArg);
 
@@ -455,11 +464,12 @@ sub Attr {
 
 ###################################
 sub refill {
-    my $hash  = shift;
+    my $hash = shift;
     my $name = $hash->{NAME};
-    readingsSingleUpdate( $hash, "lastRefill", ReadingsVal($name, 'msaltusage', 0 ),1);
+    readingsSingleUpdate( $hash, "lastRefill", ReadingsVal( $name, 'msaltusage', 0 ), 1 );
     return;
 }
+
 sub setParam {
     my $hash  = shift;
     my $param = shift;
@@ -723,9 +733,9 @@ sub login {
     my $newdata = {
         "request_type"    => 'RESPONSE',
         "logonIdentifier" => InternalVal( $name, 'USER', '' ),
-        "password"        => decryptPW( InternalVal( $name, 'PASS', '' ) )
+        "password"        => ReadPassword($hash);
     };
-    Log3 $name, LOG_DEBUG, qq(Password is ) . decryptPW( InternalVal( $name, 'PASS', '' ) );
+    
     my $newparam = {
         header      => $newheader,
         hash        => $hash,
@@ -1135,7 +1145,7 @@ sub parseInfo {
             }
             elsif ( $key eq "errors" ) {
                 foreach my $dp ( @{ $info{$key} } ) {
-                    my $mkey = 'message_' . makeReadingName( unpack('L',md5($dp->{date})) );
+                    my $mkey = 'message_' . makeReadingName( unpack( 'L', md5( $dp->{date} ) ) );
 
                     #next if (ReadingsVal($name,$mkey.'_date','') eq '');
                     readingsBulkUpdate( $hash, $mkey . '_date',       $dp->{date} );
@@ -1528,6 +1538,93 @@ sub use_module_prio {
     return;
 }
 
+sub StorePassword {
+    my $hash     = shift;
+    my $password = shift;
+    my $name     = $hash->{NAME};
+
+    my $index   = $hash->{TYPE} . "_" . $name . "_passwd";
+    my $key     = getUniqueId() . $index;
+    my $enc_pwd = "";
+
+    if ( eval "use Digest::MD5;1" ) {
+
+        $key = Digest::MD5::md5_hex( unpack "H*", $key );
+        $key .= Digest::MD5::md5_hex($key);
+    }
+
+    for my $char ( split //, $password ) {
+
+        my $encode = chop($key);
+        $enc_pwd .= sprintf( "%.2x", ord($char) ^ ord($encode) );
+        $key = $encode . $key;
+    }
+
+    my $err = setKeyValue( $index, $enc_pwd );
+    return "error while saving the password - $err" if ( defined($err) );
+
+    return "password successfully saved";
+}
+
+sub ReadPassword {
+    my $hash = shift;
+    my $name = $hash->{NAME};
+
+    my $index = $hash->{TYPE} . "_" . $name . "_passwd";
+    my $key   = getUniqueId() . $index;
+    my ( $password, $err );
+
+    Log3 $name, LOG_RECEIVE, "[$name] - Read password from file";
+
+    ( $err, $password ) = getKeyValue($index);
+
+    if ( defined($err) ) {
+
+        Log3 $name, LOG_WARNING, "[$name] - unable to read password from file: $err";
+        return;
+
+    }
+
+    if ( defined($password) ) {
+        if ( eval "use Digest::MD5;1" ) {
+
+            $key = Digest::MD5::md5_hex( unpack "H*", $key );
+            $key .= Digest::MD5::md5_hex($key);
+        }
+
+        my $dec_pwd = '';
+
+        for my $char ( map { pack( 'C', hex($_) ) } ( $password =~ /(..)/g ) ) {
+
+            my $decode = chop($key);
+            $dec_pwd .= chr( ord($char) ^ ord($decode) );
+            $key = $decode . $key;
+        }
+
+        return $dec_pwd;
+
+    }
+    else {
+
+        Log3 $name, LOG_WARNING, "[$name] - No password in file";
+        return;
+    }
+
+    return;
+}
+
+sub Rename {
+    my $new = shift;
+    my $old = shift;
+
+    my $hash = $defs{$new};
+
+    StorePassword( $hash, $new, ReadPassword( $hash, $old ) );
+    setKeyValue( $hash->{TYPE} . "_" . $old . "_passwd", undef );
+
+    return;
+}
+
 # based on https://greg-kennedy.com/wordpress/2019/03/11/writing-a-websocket-client-in-perl-5/
 sub wsConnect {
     my ( $hash, $url ) = @_;
@@ -1610,10 +1707,10 @@ sub parseWebsocketRead {
             if ( $key =~ /2$/x and AttrVal( $name, 'sq_duplex', '0' ) eq '0' ) {
                 next;
             }
-            if ( $key eq 'msaltusage' ) {    
-                my $diff = $info{$key} - ReadingsNum($name,"lastRefill", 0);
-                readingsBulkUpdate ($hash, 'saltUsageSinceRefill', $diff);
-            }            
+            if ( $key eq 'msaltusage' ) {
+                my $diff = $info{$key} - ReadingsNum( $name, "lastRefill", 0 );
+                readingsBulkUpdate( $hash, 'saltUsageSinceRefill', $diff );
+            }
             readingsBulkUpdate( $hash, $key, $info{$key} );
         }
         readingsEndUpdate( $hash, 1 );
