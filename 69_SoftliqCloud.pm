@@ -1567,7 +1567,7 @@ sub ReadPassword {
             $dec_pwd .= chr( ord($char) ^ ord($decode) );
             $key = $decode . $key;
         }
-
+        Log3 $name, LOG_WARNING, "[$name] - $dec_pwd";
         return $dec_pwd;
 
     }
