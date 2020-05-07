@@ -329,7 +329,7 @@ sub Set {
     }
     if ( $cmd eq 'password' ) {
 
-        my $err = StorePassword( $hash, $val );
+        my $err = StorePassword( $hash, $arg );
         if ( !IsDisabled($name) && defined( ReadPassword($hash) ) ) {
             my $next = int( gettimeofday() ) + 1;
             InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
