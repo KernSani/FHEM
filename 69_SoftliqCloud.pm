@@ -338,7 +338,7 @@ sub Set {
 
     }
 
-    return qq (Unknown argument $cmd, choose one of param regenerate:noArg refill:noArg);
+    return qq (Unknown argument $cmd, choose one of param regenerate:noArg refill:noArg password);
 
 }
 ###################################
