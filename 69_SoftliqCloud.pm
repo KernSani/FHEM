@@ -733,7 +733,7 @@ sub login {
     my $newdata = {
         "request_type"    => 'RESPONSE',
         "logonIdentifier" => InternalVal( $name, 'USER', '' ),
-        "password"        => ReadPassword($hash);
+        "password"        => ReadPassword($hash),
     };
     
     my $newparam = {
@@ -1485,39 +1485,6 @@ sub safe_decode_json {
     return $json;
 }
 
-sub encryptPW {
-    my $decoded = shift;
-    my $key     = getUniqueId();
-    my $encoded;
-
-    return $decoded if ( $decoded =~ /\Qcrypt:\E/xsm );
-
-    for my $char ( split //, $decoded ) {
-        my $encode = chop($key);
-        $encoded .= sprintf( "%.2x", ord($char) ^ ord($encode) );
-        $key = $encode . $key;
-    }
-
-    return 'crypt:' . $encoded;
-}
-
-sub decryptPW {
-    my $encoded = shift;
-    my $key     = getUniqueId();
-    my $decoded;
-
-    return $encoded if ( $encoded !~ /crypt:/xsm );
-
-    $encoded = $1 if ( $encoded =~ /crypt:(.*)/xsm );
-
-    for my $char ( map { pack( 'C', hex($_) ) } ( $encoded =~ /(..)/xsmg ) ) {
-        my $decode = chop($key);
-        $decoded .= chr( ord($char) ^ ord($decode) );
-        $key = $decode . $key;
-    }
-
-    return $decoded;
-}
 
 # from RichardCz, https://gl.petatech.eu/root/HomeBot/snippets/2
 
