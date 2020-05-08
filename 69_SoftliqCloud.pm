@@ -584,7 +584,7 @@ sub sqTimer {
     my $name = $hash->{NAME};
     RemoveInternalTimer($hash);
     query($hash);
-    Log3 $name, LOG_SEND, qq([$name]: Starting Timer);
+    Log3 $name, LOG_RECEIVE, qq([$name]: Starting Timer);
     my $next = int( gettimeofday() ) + AttrNum( $name, 'sq_interval', HOURSECONDS );
     InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
     return;
@@ -1144,6 +1144,7 @@ sub parseInfo {
                 }
             }
             elsif ( $key eq "errors" ) {
+                my $actMsg = 0;
                 foreach my $dp ( @{ $info{$key} } ) {
                     my $mkey = 'message_' . makeReadingName( unpack( 'L', md5( $dp->{date} ) ) );
 
@@ -1152,7 +1153,12 @@ sub parseInfo {
                     readingsBulkUpdate( $hash, $mkey . '_isResolved', $dp->{isResolved} );
                     readingsBulkUpdate( $hash, $mkey . '_message',    $dp->{message} );
                     readingsBulkUpdate( $hash, $mkey . '_type',       $dp->{type} );
+                    if ($dp->{isResolved} == 0) {
+                        $actMsg++;
+                    }
+
                 }
+                readingsBulkUpdate( $hash, 'messageCount', $actMsg);
             }
         }
         else {
