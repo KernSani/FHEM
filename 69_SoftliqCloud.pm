@@ -1573,7 +1573,7 @@ sub ReadPassword {
             $dec_pwd .= chr( ord($char) ^ ord($decode) );
             $key = $decode . $key;
         }
-        Log3 $name, LOG_WARNING, "[$name] - $dec_pwd";
+        
         return $dec_pwd;
 
     }
@@ -1799,9 +1799,10 @@ sub wsHandshake {
 
 sub wsFail {
     my $hash  = shift;
-    my $error = shift;
+    my $error = shift; 
     my $name  = $hash->{NAME};
 
+    $error //= "Unknown Error";
     # create a log emtry with the error message
     Log3 $name, LOG_ERROR, qq ([$name] - error while connecting to Websocket: $error);
 
