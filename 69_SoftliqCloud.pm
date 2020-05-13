@@ -77,8 +77,8 @@ use constant {
     LOG_RECEIVE         => 4,
     LOG_DEBUG           => 5,
 };
-$EMPTY = q{};
-$SPACE = q{ };
+my $EMPTY = q{};
+my $SPACE = q{ };
 
 ## Import der FHEM Funktionen
 BEGIN {
