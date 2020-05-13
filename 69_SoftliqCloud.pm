@@ -33,7 +33,7 @@ use strict;
 use warnings;
 
 
-package FHEM::SoftliqCloud;
+package FHEM::Gruenbeck::SoftliqCloud;
 
 use List::Util qw(any first);
 use HttpUtils;
