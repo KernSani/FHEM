@@ -21,17 +21,17 @@
 #
 ##############################################################################
 #     Changelog:
-#     20.02.2020    Parsing of grouped classes
+#     
 ##############################################################################
 ##############################################################################
 #     Todo:
 #
 #
 ##############################################################################
-
 package main;
 use strict;
 use warnings;
+
 
 package FHEM::SoftliqCloud;
 
@@ -77,6 +77,8 @@ use constant {
     LOG_RECEIVE         => 4,
     LOG_DEBUG           => 5,
 };
+$EMPTY = q{};
+$SPACE = q{ };
 
 ## Import der FHEM Funktionen
 BEGIN {
@@ -240,7 +242,7 @@ sub Initialize {
     $hash->{RenameFn} = \&Rename;
     my @SQattr = ( "sq_interval", "disable:0,1", "sq_duplex:0,1" );
 
-    $hash->{AttrList} = join( ' ', @SQattr ) . ' ' . $readingFnAttributes;
+    $hash->{AttrList} = join( $SPACE, @SQattr ) . $SPACE . $readingFnAttributes;
 
     #$hash->{AttrList} = $::readingFnAttributes;
 
@@ -493,7 +495,7 @@ sub setParam {
     my $setparam = {
         header => $header,
         url    => 'https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/'
-            . ReadingsVal( $name, 'id', '' )
+            . ReadingsVal( $name, 'id', $EMPTY )
             . '/parameters?api-version=2019-08-09',
         callback => \&parseParam,
         hash     => $hash,
@@ -529,7 +531,7 @@ sub regenerate {
     my $setparam = {
         header => $header,
         url    => 'https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/'
-            . ReadingsVal( $name, 'id', '' )
+            . ReadingsVal( $name, 'id', $EMPTY )
             . '/regenerate?api-version=2019-08-09',
         callback => \&parseRegenerate,
         hash     => $hash,
@@ -551,7 +553,7 @@ sub parseRegenerate {
     Log3 $name, LOG_RECEIVE, qq($err / $json);
 
     # we actually don't expect a response
-    return if ( $json eq '' );
+    return if ( $json eq $EMPTY );
 
     $json = latin1ToUtf8($json);
 
@@ -595,7 +597,7 @@ sub query {
 
     my $name = $hash->{NAME};
 
-    if ( ReadingsVal( $name, 'accessToken', '' ) eq '' || isExpiredToken($hash) ) {
+    if ( ReadingsVal( $name, 'accessToken', $EMPTY ) eq $EMPTY || isExpiredToken($hash) ) {
         push @{ $hash->{helper}{cmdQueue} }, \&authenticate;
         push @{ $hash->{helper}{cmdQueue} }, \&login;
         push @{ $hash->{helper}{cmdQueue} }, \&getCode;
@@ -732,7 +734,7 @@ sub login {
     };
     my $newdata = {
         "request_type"    => 'RESPONSE',
-        "logonIdentifier" => InternalVal( $name, 'USER', '' ),
+        "logonIdentifier" => InternalVal( $name, 'USER', $EMPTY ),
         "password"        => ReadPassword($hash),
     };
     
@@ -829,7 +831,7 @@ sub parseCode {
     Log3 $name, LOG_RECEIVE, qq($err / $data);
 
     my @code = $data =~ /code%3d(.*)\">here/xsm;
-    if ( $code[0] eq '' ) {
+    if ( $code[0] eq $EMPTY ) {
         readingsSingleUpdate( $hash, 'error',             'no code found', 1 );
         readingsSingleUpdate( $hash, 'error_description', '---',           1 );
         return;
@@ -874,7 +876,7 @@ sub initToken {
         . $hash->{helper}{code}
         . "&grant_type=authorization_code&"
         . "code_verifier="
-        . ReadingsVal( $name, 'code_challenge', '' )
+        . ReadingsVal( $name, 'code_challenge', $EMPTY )
         . "&redirect_uri=msal5a83cc16-ffb1-42e9-9859-9fbf07f36df8%3A%2F%2Fauth"
         . "&client_id=5a83cc16-ffb1-42e9-9859-9fbf07f36df8";
 
@@ -893,7 +895,7 @@ sub parseRefreshToken {
     my $name   = $hash->{NAME};
     my $header = $param->{httpheader};
 
-    Log3 $name, 4, qq($err / $json);
+    Log3 $name, LOG_RECEIVE, qq($err / $json);
 
     my $data = safe_decode_json( $hash, $json );
     Log3 $name, LOG_DEBUG, Dumper($data);
@@ -945,14 +947,14 @@ sub getRefreshTokenHeader {
     my $newdata
         = "client_id=5a83cc16-ffb1-42e9-9859-9fbf07f36df8&scope=https://gruenbeckb2c.onmicrosoft.com/iot/user_impersonation openid profile offline_access&"
         . "refresh_token="
-        . ReadingsVal( $name, 'refreshToken', '' )    #$hash->{helper}{refreshToken}
+        . ReadingsVal( $name, 'refreshToken',$EMPTY )    #$hash->{helper}{refreshToken}
         . "&client_info=1&" . "grant_type=refresh_token";
     my $param = {
         header => $header,
         data   => $newdata,
         hash   => $hash,
         method => "POST",
-        url    => "https://gruenbeckb2c.b2clogin.com" . ReadingsVal( $name, 'tenant', '' ) . "/oauth2/v2.0/token"
+        url    => "https://gruenbeckb2c.b2clogin.com" . ReadingsVal( $name, 'tenant', $EMPTY ) . "/oauth2/v2.0/token"
     };
 
     return $param;
@@ -1056,7 +1058,7 @@ sub getMeasurements {
     my $param = {
         header => $header,
         url    => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/"
-            . ReadingsVal( $name, 'id', '' )
+            . ReadingsVal( $name, 'id', $EMPTY )
             . "/measurements/"
             . $type
             . '/?api-version=2019-08-09/',
@@ -1103,7 +1105,7 @@ sub getInfo {
     };
     my $param = {
         header   => $header,
-        url      => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/" . ReadingsVal( $name, 'id', '' ),
+        url      => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/" . ReadingsVal( $name, 'id', $EMPTY ),
         callback => \&parseInfo,
         hash     => $hash
     };
@@ -1182,7 +1184,7 @@ sub getParamList {
             $paramTexts{$p} //= 'N/A'
                 ; #The slash slash operator in perl returns the left side value if it is defined, otherwise it returns the right side value.
             $ret .= qq(<td>$paramTexts{$p}</td>);
-            my $rv = ReadingsVal( $name, ".$p", '' );
+            my $rv = ReadingsVal( $name, ".$p", $EMPTY );
             $ret .= qq(<td>$rv);
             if ( defined( $paramValueMap{$p} ) ) {
                 $ret .= qq / ($paramValueMap{$p}{$rv})/;
@@ -1214,7 +1216,7 @@ sub getParam {
     my $param = {
         header => $header,
         url    => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/"
-            . ReadingsVal( $name, 'id', '' )
+            . ReadingsVal( $name, 'id', $EMPTY )
             . '/parameters?api-version=2019-08-09',
         callback => \&parseParam,
         hash     => $hash
@@ -1230,13 +1232,13 @@ sub parseParam {
 
     my $hash = $param->{hash};
     my $name = $hash->{NAME};
-    Log3 $name, 4, qq($err / $json);
+    Log3 $name, LOG_RECEIVE, qq($err / $json);
     $json = latin1ToUtf8($json);
 
     my $data = safe_decode_json( $hash, $json );
 
     #my $data = @$cdata[0];
-    Log3 $name, 4, Dumper($data);
+    Log3 $name, LOG_RECEIVE, Dumper($data);
 
     if ( defined( $data->{error} ) ) {
         readingsBeginUpdate($hash);
@@ -1390,7 +1392,7 @@ sub realtime {
     my ( $hash, $type ) = @_;
     my $name = $hash->{NAME};
 
-    Log3 $name, 4, qq ([$name] Callinng realtime for $type);
+    Log3 $name, LOG_RECEIVE, qq ([$name] Callinng realtime for $type);
 
     my $header = {
         "Content-Length" => 0,
@@ -1405,7 +1407,7 @@ sub realtime {
     my $param = {
         header => $header,
         url    => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/"
-            . ReadingsVal( $name, 'id', '' )
+            . ReadingsVal( $name, 'id', $EMPTY )
             . "/realtime/$type?api-version=2019-08-09",
         callback => \&parseRealtime,
         hash     => $hash,
@@ -1441,8 +1443,8 @@ sub getCookies {
             Log3 $name, LOG_RECEIVE, qq($name: GetCookies parsed Cookie: $1 Wert $2 Rest $3);
             my $cname = $1;
             my $value = $2;
-            my $rest  = ( $3 ? $3 : '' );
-            my $path  = '';
+            my $rest  = ( $3 ? $3 : $EMPTY );
+            my $path  = $EMPTY;
             if ( $rest =~ /path=([^;,]+)/xsm ) {
                 $path = $1;
             }
@@ -1518,7 +1520,7 @@ sub StorePassword {
 
     my $index   = $hash->{TYPE} . "_" . $name . "_passwd";
     my $key     = getUniqueId() . $index;
-    my $enc_pwd = "";
+    my $enc_pwd = $EMPTY;
 
     if ( eval "use Digest::MD5;1" ) {
 
@@ -1565,7 +1567,7 @@ sub ReadPassword {
             $key .= Digest::MD5::md5_hex($key);
         }
 
-        my $dec_pwd = '';
+        my $dec_pwd =$EMPTY;
 
         for my $char ( map { pack( 'C', hex($_) ) } ( $password =~ /(..)/g ) ) {
 
@@ -1689,7 +1691,7 @@ sub parseWebsocketRead {
         readingsEndUpdate( $hash, 1 );
 
     }
-
+    return;
 }
 
 sub wsHandshake {
@@ -1738,9 +1740,9 @@ sub wsHandshake {
             my $sclient = shift;
             my ($buf) = @_;
 
-            Log3 $name, LOG_ERROR, "[$name] ERROR ON WEBSOCKET: $buf";
+            Log3 $name, LOG_ERROR, qq([$name] ERROR ON WEBSOCKET: $buf);
             $tcp_socket->close;
-            return;
+            return qq([$name] ERROR ON WEBSOCKET: $buf);
         }
     );
 
