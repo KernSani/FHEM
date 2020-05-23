@@ -1399,7 +1399,7 @@ sub realtime {
     my ( $hash, $type ) = @_;
     my $name = $hash->{NAME};
 
-    Log3 $name, LOG_RECEIVE, qq ([$name] Callinng realtime for $type);
+    Log3 $name, LOG_RECEIVE, qq ([$name] Calling realtime for $type);
 
     my $header = {
         "Content-Length" => 0,
@@ -1740,6 +1740,7 @@ sub wsHandshake {
             #succesfully connected - start a timer
             my $next = int( gettimeofday() ) + MINUTESECONDS;
             InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
+            return;
 
         }
     );
