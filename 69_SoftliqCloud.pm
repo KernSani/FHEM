@@ -279,7 +279,7 @@ sub Define {
         readingsSingleUpdate( $hash, "state", "inactive", 1 );
         $hash->{helper}{DISABLED} = 1;
     }
-    return qq(Please set password using "Set $name password <password>");
+    return;
 }
 ###################################
 sub Undefine {
