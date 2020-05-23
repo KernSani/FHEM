@@ -273,7 +273,7 @@ sub Define {
     #start timer
     if ( !IsDisabled($name) && $init_done && defined( ReadPassword($hash) ) ) {
         my $next = int( gettimeofday() ) + 1;
-        InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
+        InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::sqTimer', $hash, 0 );
     }
     if ( IsDisabled($name) ) {
         readingsSingleUpdate( $hash, "state", "inactive", 1 );
@@ -298,7 +298,7 @@ sub Notify {
     return if ( !any {m/^INITIALIZED|REREADCFG$/xsm} @{$events} );
 
     my $next = int( gettimeofday() ) + 1;
-    InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
+    InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::sqTimer', $hash, 0 );
     return;
 }
 ###################################
@@ -334,7 +334,7 @@ sub Set {
         my $err = StorePassword( $hash, $arg );
         if ( !IsDisabled($name) && defined( ReadPassword($hash) ) ) {
             my $next = int( gettimeofday() ) + 1;
-            InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
+            InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::sqTimer', $hash, 0 );
         }
         return $err;
 
@@ -418,7 +418,7 @@ sub Attr {
             # restrict interval to 5 minutes
             if ( $aVal > SQ_MINIMUM_INTERVAL ) {
                 my $next = int( gettimeofday() ) + 1;
-                InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
+                InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::sqTimer', $hash, 0 );
                 return;
             }
 
@@ -441,7 +441,7 @@ sub Attr {
                 readingsSingleUpdate( $hash, "state", "initialized", 1 );
                 $hash->{helper}{DISABLED} = 0;
                 my $next = int( gettimeofday() ) + 1;
-                InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
+                InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::sqTimer', $hash, 0 );
                 return;
             }
 
@@ -457,7 +457,7 @@ sub Attr {
             readingsSingleUpdate( $hash, "state", "initialized", 1 );
             $hash->{helper}{DISABLED} = 0;
             my $next = int( gettimeofday() ) + 1;
-            InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
+            InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::sqTimer', $hash, 0 );
             return;
         }
     }
@@ -588,7 +588,7 @@ sub sqTimer {
     query($hash);
     Log3 $name, LOG_RECEIVE, qq([$name]: Starting Timer);
     my $next = int( gettimeofday() ) + AttrNum( $name, 'sq_interval', HOURSECONDS );
-    InternalTimer( $next, 'FHEM::SoftliqCloud::sqTimer', $hash, 0 );
+    InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::sqTimer', $hash, 0 );
     return;
 }
 
@@ -1654,9 +1654,9 @@ sub wsConnect {
     $hash->{WEBSOCKET}   = 1;
 
     #DevIo_CloseDev($hash) if ( DevIo_IsOpen($hash) );
-    DevIo_OpenDev( $hash, 0, "FHEM::SoftliqCloud::wsHandshake", "FHEM::SoftliqCloud::wsFail" );
+    DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsHandshake", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
 
-    #my $conn = DevIo_OpenDev( $hash, 0, "FHEM::SoftliqCloud::wsHandshake");
+    #my $conn = DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsHandshake");
     #Log3 $name, 1, "[$name] Opening Websocket: $conn... $hash->{TCPDev}";
     return;
 }
@@ -1730,6 +1730,10 @@ sub wsHandshake {
             #  just put your logic as I did here.  Or nothing at all :)
             Log3 $name, LOG_SEND, "[$name] Successfully connected to service!";
             $sclient->write('{"protocol":"json","version":1}');
+            #succesfully connected - start a timer
+            my $next = int( gettimeofday() ) + MINUTESECONDS;
+            InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
+
         }
     );
 
@@ -1795,7 +1799,7 @@ sub wsHandshake {
 
     # my $next = int( gettimeofday() ) + 1;
     # $hash->{helper}{wsCount} = 0;
-    #InternalTimer( $next, 'FHEM::SoftliqCloud::wsRead', $hash, 0 );
+    #InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsRead', $hash, 0 );
     return;
 }
 
@@ -1815,7 +1819,7 @@ sub Ready {
     my $hash = shift;
 
     # try to reopen the connection in case the connection is lost
-    #return DevIo_OpenDev( $hash, 1, "FHEM::SoftliqCloud::wsHandshake", "FHEM::SoftliqCloud::wsFail" );
+    #return DevIo_OpenDev( $hash, 1, "FHEM::Gruenbeck::SoftliqCloud::wsHandshake", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
     negotiate($hash);
     return;
 }
@@ -1831,4 +1835,14 @@ sub wsReadDevIo {
     return;
 }
 
+sub wsClose {
+    my $hash   = shift;
+    my $name   = $hash->{NAME};
+    my $client = $hash->{helper}{wsClient};
+
+    $client->disconnect;
+    DevIo_CloseDev($hash);;
+
+    return;
+}
 1;
