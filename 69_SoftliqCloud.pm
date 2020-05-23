@@ -311,8 +311,9 @@ sub Set {
 
     #delete $hash->{helper}{cmdQueue};
     if (!ReadPassword($hash)) {
-        return qq(set password first):
+        return qq(set password first);
     }
+
     if ( $cmd eq 'param' ) {
         return qq(Usage is 'set $name $cmd <parameter> <value>') if ( !$cmd || !$val );
 
@@ -352,7 +353,7 @@ sub Get {
     my $cmd  = shift // return "set $name needs at least one argument";
 
     if (!ReadPassword($hash)) {
-        return qq(set password first):
+        return qq(set password first);
     }
 
 
