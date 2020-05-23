@@ -1839,7 +1839,7 @@ sub wsClose {
     my $hash   = shift;
     my $name   = $hash->{NAME};
     my $client = $hash->{helper}{wsClient};
-
+    Log3 $name, LOG_RECEIVE, qq ([$name] - Closing Websocket connection);
     $client->disconnect;
     DevIo_CloseDev($hash);;
 
