@@ -1738,9 +1738,9 @@ sub wsHandshake {
             Log3 $name, LOG_SEND, "[$name] Successfully connected to service!";
             $sclient->write('{"protocol":"json","version":1}');
             #succesfully connected - start a timer
-            my $next = int( gettimeofday() ) + MINUTESECONDS;
-            InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
-            return;
+            #my $next = int( gettimeofday() ) + MINUTESECONDS;
+            #InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
+            #return;
 
         }
     );
