@@ -21,7 +21,7 @@
 #
 ##############################################################################
 #     Changelog:
-#     
+#
 ##############################################################################
 ##############################################################################
 #     Todo:
@@ -31,7 +31,6 @@
 package main;
 use strict;
 use warnings;
-
 
 package FHEM::Gruenbeck::SoftliqCloud;
 
@@ -310,7 +309,7 @@ sub Set {
     my $val  = shift;
 
     #delete $hash->{helper}{cmdQueue};
-    if (!ReadPassword($hash)) {
+    if ( !ReadPassword($hash) ) {
         return qq(set password first);
     }
 
@@ -352,10 +351,9 @@ sub Get {
     my $name = shift;
     my $cmd  = shift // return "set $name needs at least one argument";
 
-    if (!ReadPassword($hash)) {
+    if ( !ReadPassword($hash) ) {
         return qq(set password first);
     }
-
 
     delete $hash->{helper}{cmdQueue};
 
@@ -745,7 +743,7 @@ sub login {
         "logonIdentifier" => InternalVal( $name, 'USER', $EMPTY ),
         "password"        => ReadPassword($hash),
     };
-    
+
     my $newparam = {
         header      => $newheader,
         hash        => $hash,
@@ -955,7 +953,7 @@ sub getRefreshTokenHeader {
     my $newdata
         = "client_id=5a83cc16-ffb1-42e9-9859-9fbf07f36df8&scope=https://gruenbeckb2c.onmicrosoft.com/iot/user_impersonation openid profile offline_access&"
         . "refresh_token="
-        . ReadingsVal( $name, 'refreshToken',$EMPTY )    #$hash->{helper}{refreshToken}
+        . ReadingsVal( $name, 'refreshToken', $EMPTY )    #$hash->{helper}{refreshToken}
         . "&client_info=1&" . "grant_type=refresh_token";
     my $param = {
         header => $header,
@@ -1163,12 +1161,12 @@ sub parseInfo {
                     readingsBulkUpdate( $hash, $mkey . '_isResolved', $dp->{isResolved} );
                     readingsBulkUpdate( $hash, $mkey . '_message',    $dp->{message} );
                     readingsBulkUpdate( $hash, $mkey . '_type',       $dp->{type} );
-                    if ($dp->{isResolved} == 0) {
+                    if ( $dp->{isResolved} == 0 ) {
                         $actMsg++;
                     }
 
                 }
-                readingsBulkUpdate( $hash, 'messageCount', $actMsg);
+                readingsBulkUpdate( $hash, 'messageCount', $actMsg );
             }
         }
         else {
@@ -1501,7 +1499,6 @@ sub safe_decode_json {
     return $json;
 }
 
-
 # from RichardCz, https://gl.petatech.eu/root/HomeBot/snippets/2
 
 sub use_module_prio {
@@ -1575,7 +1572,7 @@ sub ReadPassword {
             $key .= Digest::MD5::md5_hex($key);
         }
 
-        my $dec_pwd =$EMPTY;
+        my $dec_pwd = $EMPTY;
 
         for my $char ( map { pack( 'C', hex($_) ) } ( $password =~ /(..)/g ) ) {
 
@@ -1583,7 +1580,7 @@ sub ReadPassword {
             $dec_pwd .= chr( ord($char) ^ ord($decode) );
             $key = $decode . $key;
         }
-        
+
         return $dec_pwd;
 
     }
@@ -1655,7 +1652,7 @@ sub wsConnect {
     # ) or Log3 $name, 1, "[$name] Failed to connect to socket: $@";
 
     return if ( DevIo_IsOpen($hash) );
-    Log3 $name, LOG_SEND, "[$name] Attempting to open SSL socket to $proto://$host:$port...";
+    Log3 $name, LOG_RECEIVE, "[$name] Attempting to open SSL socket to $proto://$host:$port...";
     $hash->{DeviceName}  = $host . ':' . $port;
     $hash->{helper}{url} = $url;
     $hash->{SSL}         = 1;
@@ -1711,7 +1708,7 @@ sub wsHandshake {
     # create a websocket protocol handler
     #  this doesn't actually "do" anything with the socket:
     #  it just encodes / decode WebSocket messages.  We have to send them ourselves.
-    Log3 $name, LOG_SEND, "[$name] Trying to create Protocol::WebSocket::Client handler for $url...";
+    Log3 $name, LOG_RECEIVE, "[$name] Trying to create Protocol::WebSocket::Client handler for $url...";
     my $client = Protocol::WebSocket::Client->new(
         url     => $url,
         version => "13",
@@ -1736,8 +1733,9 @@ sub wsHandshake {
 
             # You may wish to set a global variable here (our $isConnected), or
             #  just put your logic as I did here.  Or nothing at all :)
-            Log3 $name, LOG_SEND, "[$name] Successfully connected to service!".Dumper($hash);
+            Log3 $name, LOG_RECEIVE, "[$name] Successfully connected to service!" . Dumper($hash);
             $sclient->write('{"protocol":"json","version":1}');
+
             #succesfully connected - start a timer
             my $next = int( gettimeofday() ) + MINUTESECONDS;
             InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
@@ -1778,7 +1776,7 @@ sub wsHandshake {
     # Now that we've set all that up, call connect on $client.
     #  This causes the Protocol object to create a handshake and write it
     #  (using the on_write method we specified - which includes sysread $tcp_socket)
-    Log3 $name, LOG_SEND, "[$name] Calling connect on client...";
+    Log3 $name, LOG_RECEIVE, "[$name] Calling connect on client...";
     $client->connect;
 
     # read until handshake is complete.
@@ -1814,11 +1812,12 @@ sub wsHandshake {
 
 sub wsFail {
     my $hash  = shift;
-    my $error = shift; 
+    my $error = shift;
     my $name  = $hash->{NAME};
 
     #$error //= "Unknown Error";
     return unless $error;
+
     # create a log emtry with the error message
     Log3 $name, LOG_ERROR, qq ([$name] - error while connecting to Websocket: $error);
 
@@ -1828,8 +1827,8 @@ sub wsFail {
 sub Ready {
     my $hash = shift;
 
-    # try to reopen the connection in case the connection is lost
-    #return DevIo_OpenDev( $hash, 1, "FHEM::Gruenbeck::SoftliqCloud::wsHandshake", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
+# try to reopen the connection in case the connection is lost
+#return DevIo_OpenDev( $hash, 1, "FHEM::Gruenbeck::SoftliqCloud::wsHandshake", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
     negotiate($hash);
     return;
 }
@@ -1851,7 +1850,8 @@ sub wsClose {
     my $client = $hash->{helper}{wsClient};
     Log3 $name, LOG_RECEIVE, qq ([$name] - Closing Websocket connection);
     $client->disconnect;
-    DevIo_CloseDev($hash);;
+    DevIo_CloseDev($hash);
+    readingsSingleUpdate $hash, "state", "closed", 0 );
 
     return;
 }
