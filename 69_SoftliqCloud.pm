@@ -1851,7 +1851,7 @@ sub wsClose {
     Log3 $name, LOG_RECEIVE, qq ([$name] - Closing Websocket connection);
     $client->disconnect;
     DevIo_CloseDev($hash);
-    readingsSingleUpdate $hash, "state", "closed", 0 );
+    readingsSingleUpdate( $hash, "state", "closed", 0 );
 
     return;
 }
