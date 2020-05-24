@@ -45,6 +45,7 @@ use DevIo;
 use B qw(svref_2object);
 use utf8;
 use Digest::MD5 qw(md5);
+use Englsih;
 
 my $missingModul = '';
 eval 'use MIME::Base64::URLSafe;1'       or $missingModul .= 'MIME::Base64::URLSafe ';
@@ -75,6 +76,7 @@ use constant {
     LOG_SEND            => 3,
     LOG_RECEIVE         => 4,
     LOG_DEBUG           => 5,
+    TCPPACKETSIZE       => 16384,
 };
 my $EMPTY = q{};
 my $SPACE = q{ };
@@ -1783,7 +1785,7 @@ sub wsHandshake {
     while ( !$client->{hs}->is_done ) {
         my $recv_data;
 
-        my $bytes_read = sysread $tcp_socket, $recv_data, 16384;
+        my $bytes_read = sysread $tcp_socket, $recv_data, TCPPACKETSIZE;
 
         if ( !defined $bytes_read ) {
             Log3 $name, LOG_ERROR, qq([$name] sysread on tcp_socket failed: $!);
