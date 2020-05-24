@@ -1736,7 +1736,7 @@ sub wsHandshake {
 
             # You may wish to set a global variable here (our $isConnected), or
             #  just put your logic as I did here.  Or nothing at all :)
-            Log3 $name, LOG_SEND, "[$name] Successfully connected to service!";
+            Log3 $name, LOG_SEND, "[$name] Successfully connected to service!".Dumper($hash);
             $sclient->write('{"protocol":"json","version":1}');
             #succesfully connected - start a timer
             my $next = int( gettimeofday() ) + MINUTESECONDS;
@@ -1817,7 +1817,8 @@ sub wsFail {
     my $error = shift; 
     my $name  = $hash->{NAME};
 
-    $error //= "Unknown Error";
+    #$error //= "Unknown Error";
+    return unless $error;
     # create a log emtry with the error message
     Log3 $name, LOG_ERROR, qq ([$name] - error while connecting to Websocket: $error);
 
