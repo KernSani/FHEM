@@ -1612,7 +1612,39 @@ sub wsConnect2 {
 
     return if ( DevIo_IsOpen($hash) );
 
-    $hash->{DeviceName} = $url;
+    # Protocol::WebSocket takes a full URL, but IO::Socket::* uses only a host
+    #  and port.  This regex section retrieves host/port from URL.
+    my ( $proto, $host, $port, $path );
+    if ( $url =~ m/^(?:(?<proto>ws|wss):\/\/)?(?<host>[^\/:]+)(?::(?<port>\d+))?(?<path>\/.*)?$/xsm ) {
+        $host = $+{host};
+        $path = $+{path};
+
+        if ( defined $+{proto} && defined $+{port} ) {
+            $proto = $+{proto};
+            $port  = $+{port};
+        }
+        elsif ( defined $+{port} ) {
+            $port = $+{port};
+            if   ( $port == 443 ) { $proto = 'wss' }
+            else                  { $proto = 'ws' }
+        }
+        elsif ( defined $+{proto} ) {
+            $proto = $+{proto};
+            if   ( $proto eq 'wss' ) { $port = 443 }
+            else                     { $port = 80 }
+        }
+        else {
+            $proto = 'ws';
+            $port  = 80;
+        }
+    }
+    else {
+        Log3 $name, LOG_ERROR, "[$name] Failed to parse Host/Port from URL.";
+    }
+
+
+    #$hash->{DeviceName} = $url;
+    $hash->{DeviceName}  = $proto. '://'.$host . ':' . $port;
     $hash->{SSL}        = 1;
     DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsStart", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
 
@@ -1622,6 +1654,7 @@ sub wsConnect2 {
 sub wsStart {
     my $hash = shift;
     my $name = $hash->{NAME};
+
     Log3( $name, LOG_RECEIVE, qq([$name] Websocket connected) );
     DevIo_SimpleWrite( $hash, '{"protocol":"json","version":1}', 2 );
 
