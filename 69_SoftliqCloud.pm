@@ -109,6 +109,7 @@ BEGIN {
             DevIo_CloseDev
             DevIo_OpenDev
             DevIo_SimpleRead
+            DevIo_SimpleWrite
             init_done
             readingFnAttributes
             setKeyValue
