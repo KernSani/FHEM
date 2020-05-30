@@ -236,7 +236,7 @@ sub Initialize {
     $hash->{GetFn}    = \&Get;
     $hash->{DefFn}    = \&Define;
     $hash->{ReadyFn}  = \&Ready;
-    $hash->{ReadFn}   = \&wsReadDevIo;
+    $hash->{ReadFn}   = \&wsReadDevIo2;
     $hash->{NotifyFn} = \&Notify;
     $hash->{UndefFn}  = \&Undefine;
     $hash->{AttrFn}   = \&Attr;
@@ -1386,7 +1386,7 @@ sub parseWebsocketId {
         . "&access_token="
         . $hash->{helper}{wsAccessToken};
 
-    wsConnect( $hash, $url );
+    wsConnect2( $hash, $url );
 
     realtime( $hash, "enter" );
     realtime( $hash, "refresh" );
@@ -1604,6 +1604,27 @@ sub Rename {
     StorePassword( $hash, $new, ReadPassword( $hash, $old ) );
     setKeyValue( $hash->{TYPE} . "_" . $old . "_passwd", undef );
 
+    return;
+}
+
+sub wsConnect2 {
+    my ( $hash, $url ) = @_;
+    my $name = $hash->{NAME};
+    
+    return if ( DevIo_IsOpen($hash) );
+
+    $hash->{DeviceName} = $url;
+    $hash->{SSL} = 1;
+    DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsStart", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
+
+
+    return;
+}
+
+sub wsStart {
+    my $hash       = shift;
+    my $name       = $hash->{NAME};    
+    DevIo_SimpleWrite($hash, '{"protocol":"json","version":1}', 2);
     return;
 }
 
@@ -1842,6 +1863,15 @@ sub wsReadDevIo {
 
     my $buf = DevIo_SimpleRead($hash);
     $client->read($buf);
+
+    return;
+}
+sub wsReadDevIo2 {
+    my $hash   = shift;
+    my $name   = $hash->{NAME};
+
+    my $buf = DevIo_SimpleRead($hash);
+    parseWebsocketRead($hash,$buf);
 
     return;
 }
