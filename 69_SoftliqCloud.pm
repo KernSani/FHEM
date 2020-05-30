@@ -1623,7 +1623,8 @@ sub wsConnect2 {
 
 sub wsStart {
     my $hash       = shift;
-    my $name       = $hash->{NAME};    
+    my $name       = $hash->{NAME};   
+    Log3 ($name, LOG_RECEIVE, qq([$name] Websocket connected)); 
     DevIo_SimpleWrite($hash, '{"protocol":"json","version":1}', 2);
     return;
 }
