@@ -1853,7 +1853,7 @@ sub Ready {
 
 # try to reopen the connection in case the connection is lost
 #return DevIo_OpenDev( $hash, 1, "FHEM::Gruenbeck::SoftliqCloud::wsHandshake", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
-    negotiate($hash);
+    #negotiate($hash);
     return;
 }
 
