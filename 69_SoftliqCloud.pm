@@ -45,7 +45,7 @@ use DevIo;
 use B qw(svref_2object);
 use utf8;
 use Digest::MD5 qw(md5);
-use Englsih;
+
 
 my $missingModul = '';
 eval 'use MIME::Base64::URLSafe;1'       or $missingModul .= 'MIME::Base64::URLSafe ';
@@ -1658,7 +1658,7 @@ sub wsConnect {
     $hash->{DeviceName}  = $host . ':' . $port;
     $hash->{helper}{url} = $url;
     $hash->{SSL}         = 1;
-    $hash->{WEBSOCKET}   = 1;
+    #$hash->{WEBSOCKET}   = 1;
 
     #DevIo_CloseDev($hash) if ( DevIo_IsOpen($hash) );
     DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsHandshake", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
