@@ -1645,7 +1645,7 @@ sub wsConnect2 {
 
 
     #$hash->{DeviceName} = $url;
-    $hash->{DeviceName}  = 'ws:'.$host . ':' . $port;
+    $hash->{DeviceName}  = 'wss:'.$host . ':' . $port;
     $hash->{SSL}        = 1;
     DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsStart", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
 
