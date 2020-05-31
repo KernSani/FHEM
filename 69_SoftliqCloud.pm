@@ -1643,9 +1643,9 @@ sub wsConnect2 {
         Log3 $name, LOG_ERROR, "[$name] Failed to parse Host/Port from URL.";
     }
 
-
-    #$hash->{DeviceName} = $url;
-    $hash->{DeviceName}  = 'wss:'.$host . ':' . $port;
+    $url =~ s/wss:\/\//wss:/ $url;
+    $hash->{DeviceName} = $url;
+    #$hash->{DeviceName}  = 'wss:'.$host . ':' . $port;
     $hash->{SSL}        = 1;
     DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsStart", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
 
