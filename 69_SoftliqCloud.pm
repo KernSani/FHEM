@@ -1643,7 +1643,7 @@ sub wsConnect2 {
         Log3 $name, LOG_ERROR, "[$name] Failed to parse Host/Port from URL.";
     }
 
-    $url =~ s/wss:\/\//wss:/ $url;
+    $url =~ /s/wss:\/\//wss:/ $url;
     $hash->{DeviceName} = $url;
     #$hash->{DeviceName}  = 'wss:'.$host . ':' . $port;
     $hash->{SSL}        = 1;
