@@ -1610,7 +1610,7 @@ sub Rename {
 sub wsConnect2 {
     my ( $hash, $url ) = @_;
     my $name = $hash->{NAME};
-    $hash->{loglevel} = 1;
+    #$hash->{loglevel} = 1;
     return if ( DevIo_IsOpen($hash) );
 
     # Protocol::WebSocket takes a full URL, but IO::Socket::* uses only a host
@@ -1902,23 +1902,13 @@ sub wsReadDevIo {
 
     my $buf = DevIo_SimpleRead($hash);
     $buf =~ s///xsm;
-    parseWebsocketRead( $hash, $buf );
-
-    #    $client->read($buf);
-
-    return;
-}
-
-sub wsReadDevIo2 {
-    my $hash = shift;
-    my $name = $hash->{NAME};
-
-    my $buf = DevIo_SimpleRead($hash);
     if ( length($buf) == 0 ) {
         return;
     }
     Log3( $name, LOG_RECEIVE, qq([$name] Received from DevIo: $buf) );
     parseWebsocketRead( $hash, $buf );
+
+    #    $client->read($buf);
 
     return;
 }
