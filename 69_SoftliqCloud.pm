@@ -1914,7 +1914,7 @@ sub wsReadDevIo2 {
     my $name = $hash->{NAME};
 
     my $buf = DevIo_SimpleRead($hash);
-    if ( length($buf) = 0 ) {
+    if ( length($buf) == 0 ) {
         return;
     }
     Log3( $name, LOG_RECEIVE, qq([$name] Received from DevIo: $buf) );
