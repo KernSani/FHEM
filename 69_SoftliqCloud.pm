@@ -236,7 +236,7 @@ sub Initialize {
     $hash->{GetFn}    = \&Get;
     $hash->{DefFn}    = \&Define;
     $hash->{ReadyFn}  = \&Ready;
-    $hash->{ReadFn}   = \&wsReadDevIo2;
+    $hash->{ReadFn}   = \&wsReadDevIo;
     $hash->{NotifyFn} = \&Notify;
     $hash->{UndefFn}  = \&Undefine;
     $hash->{AttrFn}   = \&Attr;
@@ -1610,7 +1610,7 @@ sub Rename {
 sub wsConnect2 {
     my ( $hash, $url ) = @_;
     my $name = $hash->{NAME};
-
+    $hash->{loglevel} = 1;
     return if ( DevIo_IsOpen($hash) );
 
     # Protocol::WebSocket takes a full URL, but IO::Socket::* uses only a host
@@ -1644,8 +1644,8 @@ sub wsConnect2 {
     }
 
     #$url =~ s/wss:\/\//wss:/;
-    $hash->{DeviceName} = $url;
-    #$hash->{DeviceName}  = 'wss:'.$host . ':' . $port;
+    #$hash->{DeviceName} = $url;
+    $hash->{DeviceName} = 'wss:' . $host . ':' . $port . $path;
     $hash->{SSL}        = 1;
     DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsStart", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
 
@@ -1660,8 +1660,8 @@ sub wsStart {
     DevIo_SimpleWrite( $hash, '{"protocol":"json","version":1}', 2 );
 
     #succesfully connected - start a timer
-    my $next = int( gettimeofday() ) + MINUTESECONDS;
-    InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
+    #my $next = int( gettimeofday() ) + MINUTESECONDS;
+    #InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
 
     return;
 }
@@ -1901,7 +1901,10 @@ sub wsReadDevIo {
     my $client = $hash->{helper}{wsClient};
 
     my $buf = DevIo_SimpleRead($hash);
-    $client->read($buf);
+    $buf =~ s///xsm;
+    parseWebsocketRead( $hash, $buf );
+
+    #    $client->read($buf);
 
     return;
 }
@@ -1911,6 +1914,7 @@ sub wsReadDevIo2 {
     my $name = $hash->{NAME};
 
     my $buf = DevIo_SimpleRead($hash);
+    Log3( $name, LOG_RECEIVE, qq([$name] Received from DevIo: $buf) );
     parseWebsocketRead( $hash, $buf );
 
     return;
@@ -1921,6 +1925,7 @@ sub wsClose {
     my $name   = $hash->{NAME};
     my $client = $hash->{helper}{wsClient};
     Log3 $name, LOG_RECEIVE, qq ([$name] - Closing Websocket connection);
+
     #$client->disconnect;
     DevIo_CloseDev($hash);
     readingsSingleUpdate( $hash, "state", "closed", 0 );
