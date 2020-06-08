@@ -49,7 +49,7 @@ use Digest::MD5 qw(md5);
 my $missingModul = '';
 eval 'use MIME::Base64::URLSafe;1'       or $missingModul .= 'MIME::Base64::URLSafe ';
 eval 'use Digest::SHA qw(sha256);1;'     or $missingModul .= 'Digest::SHA ';
-eval 'use Protocol::WebSocket::Client;1' or $missingModul .= 'Protocol::WebSocket::Client ';
+#eval 'use Protocol::WebSocket::Client;1' or $missingModul .= 'Protocol::WebSocket::Client ';
 
 # Taken from RichardCZ https://gl.petatech.eu/root/HomeBot/snippets/2
 my $got_module = use_module_prio(
@@ -1761,116 +1761,116 @@ sub parseWebsocketRead {
     return;
 }
 
-sub wsHandshake {
-    my $hash       = shift;
-    my $name       = $hash->{NAME};
-    my $tcp_socket = $hash->{TCPDev};
-    my $url        = $hash->{helper}{url};
+# sub wsHandshake {
+#     my $hash       = shift;
+#     my $name       = $hash->{NAME};
+#     my $tcp_socket = $hash->{TCPDev};
+#     my $url        = $hash->{helper}{url};
 
-    # create a websocket protocol handler
-    #  this doesn't actually "do" anything with the socket:
-    #  it just encodes / decode WebSocket messages.  We have to send them ourselves.
-    Log3 $name, LOG_RECEIVE, "[$name] Trying to create Protocol::WebSocket::Client handler for $url...";
-    my $client = Protocol::WebSocket::Client->new(
-        url     => $url,
-        version => "13",
-    );
+#     # create a websocket protocol handler
+#     #  this doesn't actually "do" anything with the socket:
+#     #  it just encodes / decode WebSocket messages.  We have to send them ourselves.
+#     Log3 $name, LOG_RECEIVE, "[$name] Trying to create Protocol::WebSocket::Client handler for $url...";
+#     my $client = Protocol::WebSocket::Client->new(
+#         url     => $url,
+#         version => "13",
+#     );
 
-    # Set up the various methods for the WS Protocol handler
-    #  On Write: take the buffer (WebSocket packet) and send it on the socket.
-    $client->on(
-        write => sub {
-            my $sclient = shift;
-            my ($buf) = @_;
+#     # Set up the various methods for the WS Protocol handler
+#     #  On Write: take the buffer (WebSocket packet) and send it on the socket.
+#     $client->on(
+#         write => sub {
+#             my $sclient = shift;
+#             my ($buf) = @_;
 
-            syswrite $tcp_socket, $buf;
-        }
-    );
+#             syswrite $tcp_socket, $buf;
+#         }
+#     );
 
-    # On Connect: this is what happens after the handshake succeeds, and we
-    #  are "connected" to the service.
-    $client->on(
-        connect => sub {
-            my $sclient = shift;
+#     # On Connect: this is what happens after the handshake succeeds, and we
+#     #  are "connected" to the service.
+#     $client->on(
+#         connect => sub {
+#             my $sclient = shift;
 
-            # You may wish to set a global variable here (our $isConnected), or
-            #  just put your logic as I did here.  Or nothing at all :)
-            Log3 $name, LOG_RECEIVE, "[$name] Successfully connected to service!" . Dumper($hash);
-            $sclient->write('{"protocol":"json","version":1}');
+#             # You may wish to set a global variable here (our $isConnected), or
+#             #  just put your logic as I did here.  Or nothing at all :)
+#             Log3 $name, LOG_RECEIVE, "[$name] Successfully connected to service!" . Dumper($hash);
+#             $sclient->write('{"protocol":"json","version":1}');
 
-            #succesfully connected - start a timer
-            my $next = int( gettimeofday() ) + MINUTESECONDS;
-            InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
-            return;
+#             #succesfully connected - start a timer
+#             my $next = int( gettimeofday() ) + MINUTESECONDS;
+#             InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
+#             return;
 
-        }
-    );
+#         }
+#     );
 
-    # On Error, print to console.  This can happen if the handshake
-    #  fails for whatever reason.
-    $client->on(
-        error => sub {
-            my $sclient = shift;
-            my ($buf) = @_;
+#     # On Error, print to console.  This can happen if the handshake
+#     #  fails for whatever reason.
+#     $client->on(
+#         error => sub {
+#             my $sclient = shift;
+#             my ($buf) = @_;
 
-            Log3 $name, LOG_ERROR, qq([$name] ERROR ON WEBSOCKET: $buf);
-            $tcp_socket->close;
-            return qq([$name] ERROR ON WEBSOCKET: $buf);
-        }
-    );
+#             Log3 $name, LOG_ERROR, qq([$name] ERROR ON WEBSOCKET: $buf);
+#             $tcp_socket->close;
+#             return qq([$name] ERROR ON WEBSOCKET: $buf);
+#         }
+#     );
 
-    # On Read: This method is called whenever a complete WebSocket "frame"
-    #  is successfully parsed.
-    # We will simply print the decoded packet to screen.  Depending on the service,
-    #  you may e.g. call decode_json($buf) or whatever.
-    $client->on(
-        read => sub {
-            my $sclient = shift;
-            my ($buf) = @_;
-            $buf =~ s///xsm;
-            parseWebsocketRead( $hash, $buf );
+#     # On Read: This method is called whenever a complete WebSocket "frame"
+#     #  is successfully parsed.
+#     # We will simply print the decoded packet to screen.  Depending on the service,
+#     #  you may e.g. call decode_json($buf) or whatever.
+#     $client->on(
+#         read => sub {
+#             my $sclient = shift;
+#             my ($buf) = @_;
+#             $buf =~ s///xsm;
+#             parseWebsocketRead( $hash, $buf );
 
-            #Log3 $name, 3, "[$name] Received from socket: '$buf'";
-            return;
-        }
-    );
+#             #Log3 $name, 3, "[$name] Received from socket: '$buf'";
+#             return;
+#         }
+#     );
 
-    # Now that we've set all that up, call connect on $client.
-    #  This causes the Protocol object to create a handshake and write it
-    #  (using the on_write method we specified - which includes sysread $tcp_socket)
-    Log3 $name, LOG_RECEIVE, "[$name] Calling connect on client...";
-    $client->connect;
+#     # Now that we've set all that up, call connect on $client.
+#     #  This causes the Protocol object to create a handshake and write it
+#     #  (using the on_write method we specified - which includes sysread $tcp_socket)
+#     Log3 $name, LOG_RECEIVE, "[$name] Calling connect on client...";
+#     $client->connect;
 
-    # read until handshake is complete.
-    while ( !$client->{hs}->is_done ) {
-        my $recv_data;
+#     # read until handshake is complete.
+#     while ( !$client->{hs}->is_done ) {
+#         my $recv_data;
 
-        my $bytes_read = sysread $tcp_socket, $recv_data, TCPPACKETSIZE;
+#         my $bytes_read = sysread $tcp_socket, $recv_data, TCPPACKETSIZE;
 
-        if ( !defined $bytes_read ) {
-            Log3 $name, LOG_ERROR, qq([$name] sysread on tcp_socket failed: $!);
-            return qq([$name] sysread on tcp_socket failed: $!);
-        }
-        if ( $bytes_read == 0 ) {
-            Log3 $name, LOG_ERROR, qq([$name] Connection terminated.);
-            return qq([$name] Connection terminated.);
-        }
+#         if ( !defined $bytes_read ) {
+#             Log3 $name, LOG_ERROR, qq([$name] sysread on tcp_socket failed: $!);
+#             return qq([$name] sysread on tcp_socket failed: $!);
+#         }
+#         if ( $bytes_read == 0 ) {
+#             Log3 $name, LOG_ERROR, qq([$name] Connection terminated.);
+#             return qq([$name] Connection terminated.);
+#         }
 
-        $client->read($recv_data);
-    }
+#         $client->read($recv_data);
+#     }
 
-    # Create a Socket Set for Select.
-    #  We can then test this in a loop to see if we should call read.
-    # my $set = IO::Select->new($tcp_socket);
+#     # Create a Socket Set for Select.
+#     #  We can then test this in a loop to see if we should call read.
+#     # my $set = IO::Select->new($tcp_socket);
 
-    #$hash->{helper}{wsSet}    = $set;
-    $hash->{helper}{wsClient} = $client;
+#     #$hash->{helper}{wsSet}    = $set;
+#     $hash->{helper}{wsClient} = $client;
 
-    # my $next = int( gettimeofday() ) + 1;
-    # $hash->{helper}{wsCount} = 0;
-    #InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsRead', $hash, 0 );
-    return;
-}
+#     # my $next = int( gettimeofday() ) + 1;
+#     # $hash->{helper}{wsCount} = 0;
+#     #InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsRead', $hash, 0 );
+#     return;
+# }
 
 sub wsFail {
     my $hash  = shift;
@@ -1905,7 +1905,7 @@ sub wsReadDevIo {
     if ( length($buf) == 0 ) {
         return;
     }
-    Log3( $name, LOG_ERROR, qq([$name] Received from DevIo: $buf) );
+    Log3( $name, LOG_DEBUG, qq([$name] Received from DevIo: $buf) );
     parseWebsocketRead( $hash, $buf );
 
     #    $client->read($buf);
