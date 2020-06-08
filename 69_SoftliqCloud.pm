@@ -1905,7 +1905,7 @@ sub wsReadDevIo {
     if ( length($buf) == 0 ) {
         return;
     }
-    Log3( $name, LOG_RECEIVE, qq([$name] Received from DevIo: $buf) );
+    Log3( $name, LOG_ERROR, qq([$name] Received from DevIo: $buf) );
     parseWebsocketRead( $hash, $buf );
 
     #    $client->read($buf);
