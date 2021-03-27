@@ -1935,3 +1935,43 @@ sub wsClose {
     return;
 }
 1;
+=pod
+=item_helper
+=item_summary Retrieve data from Softliq Cloud (Grünbeck)
+=item_summary_DE Daten aus der Softliq Cloud (Grünbeck) auslesen
+=begin html
+<a name=softliqCloud></a>
+<div>
+<ul>
+The module reads data from Grünbeck Cloud for Softliq (SD series) water softeners. It also allows setting parameters and controlling the water softener to a certain extent
+<a name='softliqCloudDefine'></a>
+        <b>Define</b>
+        <ul>
+define the module with <code>define <name> SoftliqCloud <loginName></code> where login name is the login name for the softliq cloud. After that, set your password <code>set <name> password <password></code>
+</ul>
+<a name='softliqCloudGet'></a>
+        <b>Get</b>
+        <ul>
+<li><a name='authenticate'>usually not needed, but in rare cases it might be required to re-authenticate</li>
+<li><a name='query'>reads the data from the cloud</li>
+<li><a name='realtime'>starts the data streaming (similar to the refresh button in the app)</li>
+<li><a name='salt/water'>display salt/water history</li>
+<li><a name='paramList'>shows a list of available parameters (readings) with current values. If the meaning is known there's a short explanation for it.</li>
+ </ul>
+<a name='softliqCloudSet'></a>
+        <b>Set</b>
+        <ul>
+<li><a name='param'>Allows to set parameters (see paramList) <code>set meineSoftliq <parameterName> <parameterValue></code></li>
+<li><a name='regenerate'>Immediately starts a regeneration (without warning)</li>
+<li><a name='refill'>execute after you refilled (25kg) salt. Allows tracking of remaining salt </li>
+<li><a name='password'>usually only needed initially (or if you change your password in the cloud)</li>
+ </ul>
+<a name='softliqCloudAttr'></a>
+        <b>Attributes</b>
+        <ul>
+<li><a name='sq_duplex'>set to 1, if you own a duplex machine</li>
+<li><a name='sq_interval'>polling interval in seconds (defaults to 3600)</li>
+            </ul>
+   </ul>
+</div>
+=end html
