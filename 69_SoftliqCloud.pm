@@ -1975,3 +1975,4 @@ define the module with <code>define <name> SoftliqCloud <loginName></code> where
    </ul>
 </div>
 =end html
+=cut
