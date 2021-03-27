@@ -1941,7 +1941,7 @@ sub wsClose {
 =item_summary_DE Daten aus der Softliq Cloud (Grünbeck) auslesen
 =begin html
 
-<a name=SoftliqCloud></a>
+<a name="SoftliqCloud"></a>
 <div>
 <ul>
 The module reads data from Grünbeck Cloud for Softliq (SD series) water softeners. It also allows setting parameters and controlling the water softener to a certain extent
