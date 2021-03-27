@@ -311,11 +311,9 @@ sub Set {
     my $val  = shift;
 
     #delete $hash->{helper}{cmdQueue};
-    if ( !ReadPassword($hash) ) {
-        return qq(set password first);
-    }
-
+    
     if ( $cmd eq 'param' ) {
+    
         return qq(Usage is 'set $name $cmd <parameter> <value>') if ( !$cmd || !$val );
 
         if ( any {/^$arg$/xsm} @{ $hash->{helper}{params} } ) {
@@ -1945,7 +1943,7 @@ sub wsClose {
 <div>
 <ul>
 The module reads data from Grünbeck Cloud for Softliq (SD series) water softeners. It also allows setting parameters and controlling the water softener to a certain extent
-<a name='SoftliqCloudDefine'></a>
+<br><br><a name='SoftliqCloudDefine'></a>
         <b>Define</b>
         <ul>
 define the module with <code>define <name> SoftliqCloud <loginName></code> where login name is the login name for the softliq cloud. After that, set your password <code>set <name> password <password></code>
@@ -1953,27 +1951,65 @@ define the module with <code>define <name> SoftliqCloud <loginName></code> where
 <a name='SoftliqCloudGet'></a>
         <b>Get</b>
         <ul>
-<li><a name='authenticate'>usually not needed, but in rare cases it might be required to re-authenticate</li>
-<li><a name='query'>reads the data from the cloud</li>
-<li><a name='realtime'>starts the data streaming (similar to the refresh button in the app)</li>
-<li><a name='salt/water'>display salt/water history</li>
-<li><a name='paramList'>shows a list of available parameters (readings) with current values. If the meaning is known there's a short explanation for it.</li>
+<li><a name='authenticate'>authenticate</a>: usually not needed, but in rare cases it might be required to re-authenticate</li>
+<li><a name='query'>query</a>: reads the data from the cloud</li>
+<li><a name='realtime'>realtime</a>: starts the data streaming (similar to the refresh button in the app)</li>
+<li><a name='salt/water'>salt/water</a>: display salt/water history</li>
+<li><a name='paramList'>paramList</a>: shows a list of available parameters (readings) with current values. If the meaning is known there's a short explanation for it.</li>
  </ul>
 <a name='SoftliqCloudSet'></a>
         <b>Set</b>
         <ul>
-<li><a name='param'>Allows to set parameters (see paramList) <code>set meineSoftliq <parameterName> <parameterValue></code></li>
-<li><a name='regenerate'>Immediately starts a regeneration (without warning)</li>
-<li><a name='refill'>execute after you refilled (25kg) salt. Allows tracking of remaining salt </li>
-<li><a name='password'>usually only needed initially (or if you change your password in the cloud)</li>
+<li><a name='param'>param</a>: Allows to set parameters (see paramList) <code>set meineSoftliq <parameterName> <parameterValue></code></li>
+<li><a name='regenerate'>regenerate</a>: Immediately starts a regeneration (without warning)</li>
+<li><a name='refill'>refill</a>: execute after you refilled (25kg) salt. Allows tracking of remaining salt </li>
+<li><a name='password'>password</a>: usually only needed initially (or if you change your password in the cloud)</li>
  </ul>
 <a name='SoftliqCloudAttr'></a>
         <b>Attributes</b>
         <ul>
-<li><a name='sq_duplex'>set to 1, if you own a duplex machine</li>
-<li><a name='sq_interval'>polling interval in seconds (defaults to 3600)</li>
+<li><a name='sq_duplex'>sq_duplex</a>: set to 1, if you own a duplex machine</li>
+<li><a name='sq_interval'>sq_interval</a>: polling interval in seconds (defaults to 3600)</li>
             </ul>
    </ul>
 </div>
 =end html
+
+=begin html_DE
+
+<a name=></a>
+<div>
+<ul>
+Das Modul liest Daten aus der Grünbeck Cloud für Softliq Wasserenthärter (SD Serie). Es ermöglicht auch das Setzen von Parametern, sowie eine gewisse Steuerung
+<br><br><a name='Define'></a>
+        <b>Define</b>
+        <ul>
+Definiere das Modul mit <code>define <name> SoftliqCloud <loginName></code> wobei login name dein login name für die softliq cloud ist. Danach Passwoert setzen: <code>set <name> password <password></code>
+</ul>
+<a name='SoftliqCloudGet'></a>
+        <b>Get</b>
+        <ul>
+<li><a name='authenticate'>authenticate</a>: Braucht man im Normalfall nicht, beim Testen hatte ich allerdings Fälle, wo ich mich neu authorisieren musste</li>
+<li><a name='query'>query</a>: holt alle Daten aus der Cloud</li>
+<li><a name='realtime'>realtime</a>:  triggert das "streaming" (entspricht mehr oder weniger dem refresh Button in der App)</li>
+<li><a name='salt/water'>salt/water</a>: zeigt die Salz-/Wasser-Verbrauchshistorie an</li>
+<li><a name='paramList'>paramList</a>: Zeigt die verfügbaren Einstellungen mit aktuellen Werten an (Readings). Wenn die Bedeutung bekannt ist, gibt es auch eine Erläuterung</li>
+ </ul>
+<a name='SoftliqCloudSet'></a>
+        <b>Set</b>
+        <ul>
+<li><a name='param'>param</a>: erlaubt das setzen von Einstellungen (siehe paramList) in der Form <code>set meineSoftliq <parameterName> <parameterValue></code></li>
+<li><a name='regenerate'>regenerate</a>: startet die manuelle Regeneration (ohne Nachfrage - geht direkt los)</li>
+<li><a name='refill'>refill</a>: Auszuführen wenn (25kg) Salz nachgefüllt wurden. Ermöglicht es das verbleibende Salz zu tracken</li>
+<li><a name='password'>password</a>: Einmalig auszuführen, um das Passwort im sicheren Speicher zu setzen.</li>
+ </ul>
+<a name='SoftliqCloudAttr'></a>
+        <b>Attributes</b>
+        <ul>
+<li><a name='sq_duplex'>sq_duplex</a>: Auf 1 setzen, wenn es sich um einen Duplex Entkalker handelt</li>
+<li><a name='sq_interval'>sq_interval</a>: Polling Intervall in Sekunden (Default Wert 3600)</li>
+            </ul>
+   </ul>
+</div>
+=end html_DE
 =cut
