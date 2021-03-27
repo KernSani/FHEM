@@ -1940,16 +1940,17 @@ sub wsClose {
 =item_summary Retrieve data from Softliq Cloud (Grünbeck)
 =item_summary_DE Daten aus der Softliq Cloud (Grünbeck) auslesen
 =begin html
-<a name=softliqCloud></a>
+
+<a name=SoftliqCloud></a>
 <div>
 <ul>
 The module reads data from Grünbeck Cloud for Softliq (SD series) water softeners. It also allows setting parameters and controlling the water softener to a certain extent
-<a name='softliqCloudDefine'></a>
+<a name='SoftliqCloudDefine'></a>
         <b>Define</b>
         <ul>
 define the module with <code>define <name> SoftliqCloud <loginName></code> where login name is the login name for the softliq cloud. After that, set your password <code>set <name> password <password></code>
 </ul>
-<a name='softliqCloudGet'></a>
+<a name='SoftliqCloudGet'></a>
         <b>Get</b>
         <ul>
 <li><a name='authenticate'>usually not needed, but in rare cases it might be required to re-authenticate</li>
@@ -1958,7 +1959,7 @@ define the module with <code>define <name> SoftliqCloud <loginName></code> where
 <li><a name='salt/water'>display salt/water history</li>
 <li><a name='paramList'>shows a list of available parameters (readings) with current values. If the meaning is known there's a short explanation for it.</li>
  </ul>
-<a name='softliqCloudSet'></a>
+<a name='SoftliqCloudSet'></a>
         <b>Set</b>
         <ul>
 <li><a name='param'>Allows to set parameters (see paramList) <code>set meineSoftliq <parameterName> <parameterValue></code></li>
@@ -1966,7 +1967,7 @@ define the module with <code>define <name> SoftliqCloud <loginName></code> where
 <li><a name='refill'>execute after you refilled (25kg) salt. Allows tracking of remaining salt </li>
 <li><a name='password'>usually only needed initially (or if you change your password in the cloud)</li>
  </ul>
-<a name='softliqCloudAttr'></a>
+<a name='SoftliqCloudAttr'></a>
         <b>Attributes</b>
         <ul>
 <li><a name='sq_duplex'>set to 1, if you own a duplex machine</li>
