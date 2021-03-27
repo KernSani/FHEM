@@ -663,7 +663,7 @@ sub authenticate {
             "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1"
     };
     my $url
-        = "https://gruenbeckb2c.b2clogin.com/a50d35c1-202f-4da7-aa87-76e51a3098c6/b2c_1_signinup/oauth2/v2.0/authorize?state=NzZDNkNBRkMtOUYwOC00RTZBLUE5MkYtQTNFRDVGNTQ3MUNG"
+        = "https://gruenbeckb2c.b2clogin.com/a50d35c1-202f-4da7-aa87-76e51a3098c6/b2c_1a_signinup/oauth2/v2.0/authorize?state=NzZDNkNBRkMtOUYwOC00RTZBLUE5MkYtQTNFRDVGNTQ3MUNG"
         . "&x-client-Ver=0.2.2"
         . "&prompt=select_account"
         . "&response_type=code"
@@ -735,7 +735,7 @@ sub login {
         "X-Requested-With" => "XMLHttpRequest",
         "Origin"           => "https://gruenbeckb2c.b2clogin.com",
         "Referer" =>
-            "https://gruenbeckb2c.b2clogin.com/a50d35c1-202f-4da7-aa87-76e51a3098c6/b2c_1_signinup/oauth2/v2.0/authorize?state=MTgxQUExQ0QtN0NFMi00NkE1LTgyQTQtNEY0NEREMDYzMTM2&x-client-Ver=0.2.2&prompt=select_account&response_type=code&code_challenge_method=S256&x-client-OS=13.3.1&scope=https%3A%2F%2Fgruenbeckb2c.onmicrosoft.com%2Fiot%2Fuser_impersonation+openid+profile+offline_access&x-client-SKU=MSAL.iOS&code_challenge=z3tSf1frNKpNB0TTGb6VKrLLHwNFvII7c75sv1CG9Is&x-client-CPU=64&client-request-id=1A472478-12F4-445D-81AC-170A578B4F37&redirect_uri=msal5a83cc16-ffb1-42e9-9859-9fbf07f36df8%3A%2F%2Fauth&client_id=5a83cc16-ffb1-42e9-9859-9fbf07f36df8&haschrome=1&return-client-request-id=true&x-client-DM=iPhone",
+            "https://gruenbeckb2c.b2clogin.com/a50d35c1-202f-4da7-aa87-76e51a3098c6/b2c_1a_signinup/oauth2/v2.0/authorize?state=MTgxQUExQ0QtN0NFMi00NkE1LTgyQTQtNEY0NEREMDYzMTM2&x-client-Ver=0.2.2&prompt=select_account&response_type=code&code_challenge_method=S256&x-client-OS=13.3.1&scope=https%3A%2F%2Fgruenbeckb2c.onmicrosoft.com%2Fiot%2Fuser_impersonation+openid+profile+offline_access&x-client-SKU=MSAL.iOS&code_challenge=z3tSf1frNKpNB0TTGb6VKrLLHwNFvII7c75sv1CG9Is&x-client-CPU=64&client-request-id=1A472478-12F4-445D-81AC-170A578B4F37&redirect_uri=msal5a83cc16-ffb1-42e9-9859-9fbf07f36df8%3A%2F%2Fauth&client_id=5a83cc16-ffb1-42e9-9859-9fbf07f36df8&haschrome=1&return-client-request-id=true&x-client-DM=iPhone",
         "Cookie" => $hash->{helper}{cookies},
         "User-Agent" =>
             "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1"
@@ -743,6 +743,7 @@ sub login {
     my $newdata = {
         "request_type"    => 'RESPONSE',
         "logonIdentifier" => InternalVal( $name, 'USER', $EMPTY ),
+        "signInName"	  => InternalVal( $name, 'USER', $EMPTY ),
         "password"        => ReadPassword($hash),
     };
 
@@ -854,6 +855,11 @@ sub parseCode {
 sub initToken {
     my $hash = shift;
     my $name = $hash->{NAME};
+
+    if (!$hash->{helper}{tenant}) {
+        $hash->{helper}{tenant} = ReadingsVal($name,"tenant",undef);
+    }
+
 
     my $newparam->{header} = {
         "Host"                     => "gruenbeckb2c.b2clogin.com",
@@ -996,14 +1002,14 @@ sub getDevices {
         "Host"   => "prod-eu-gruenbeck-api.azurewebsites.net",
         "Accept" => "application/json, text/plain, */*",
         "User-Agent" =>
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+            "Gruenbeck/358 CFNetwork/1220.1 Darwin/20.3.0",
         "Authorization"   => "Bearer " . $hash->{helper}{accessToken},
         "Accept-Language" => "de-de",
         "cache-control"   => "no-cache"
     };
     my $param = {
         header   => $header,
-        url      => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices",
+        url      => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices?api-version=2020-08-03",
         callback => \&parseDevices,
         hash     => $hash
     };
@@ -1069,7 +1075,7 @@ sub getMeasurements {
             . ReadingsVal( $name, 'id', $EMPTY )
             . "/measurements/"
             . $type
-            . '/?api-version=2019-08-09/',
+            . '/?api-version=2020-08-03/',
         hash => $hash
     };
 
@@ -1225,7 +1231,7 @@ sub getParam {
         header => $header,
         url    => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/"
             . ReadingsVal( $name, 'id', $EMPTY )
-            . '/parameters?api-version=2019-08-09',
+            . '/parameters?api-version=2020-08-03',
         callback => \&parseParam,
         hash     => $hash
     };
@@ -1416,7 +1422,7 @@ sub realtime {
         header => $header,
         url    => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/"
             . ReadingsVal( $name, 'id', $EMPTY )
-            . "/realtime/$type?api-version=2019-08-09",
+            . "/realtime/$type?api-version=2020-08-03",
         callback => \&parseRealtime,
         hash     => $hash,
         method   => "POST"
@@ -1901,6 +1907,9 @@ sub wsReadDevIo {
     my $client = $hash->{helper}{wsClient};
 
     my $buf = DevIo_SimpleRead($hash);
+    if (!$buf) {
+    	return;
+    }
     $buf =~ s///xsm;
     if ( length($buf) == 0 ) {
         return;
