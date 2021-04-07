@@ -1,4 +1,4 @@
-# $Id: 98_SoftliqCloud.pm 21368 2020-03-06 22:58:24Z KernSani $
+# $Id: 69_SoftliqCloud.pm 24167 2021-04-06 20:26:20Z KernSani $
 ##############################################################################
 #
 #     98_SoftliqCloud.pm
@@ -20,12 +20,14 @@
 #     along with fhem.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-#     Changelog:
-#
+#   Changelog:
+#   0.1.02: Suppress Log message "opening device..."
+#   0.1.01: Small Fix to avoid "garbage" leading to invalid JSON
+#   0.1.00: Initial Release
 ##############################################################################
 ##############################################################################
-#     Todo:
-#
+#   Todo:
+#   * identify more parameters
 #
 ##############################################################################
 package main;
@@ -45,6 +47,9 @@ use DevIo;
 use B qw(svref_2object);
 use utf8;
 use Digest::MD5 qw(md5);
+
+
+my $version = "0.1.02";
 
 my $missingModul = '';
 eval 'use MIME::Base64::URLSafe;1'       or $missingModul .= 'MIME::Base64::URLSafe ';
@@ -270,6 +275,7 @@ sub Define {
 
     $hash->{NAME} = $name;
     $hash->{USER} = $user;
+    $hash->{VERSION} = $version;
 
     #start timer
     if ( !IsDisabled($name) && $init_done && defined( ReadPassword($hash) ) ) {
@@ -1062,14 +1068,14 @@ sub getMeasurements {
         "Host"   => "prod-eu-gruenbeck-api.azurewebsites.net",
         "Accept" => "application/json, text/plain, */*",
         "User-Agent" =>
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+            "Gruenbeck/358 CFNetwork/1220.1 Darwin/20.3.0",
         "Authorization"   => "Bearer " . $hash->{helper}{accessToken},
         "Accept-Language" => "de-de",
         "cache-control"   => "no-cache"
     };
     my $param = {
         header => $header,
-        url    => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/"
+        url    => "https://prod-eu-gruenbeck-api.azurewebsites.net/api/devices/softliQ.D/"
             . ReadingsVal( $name, 'id', $EMPTY )
             . "/measurements/"
             . $type
@@ -1499,7 +1505,7 @@ sub safe_decode_json {
         1;
     } or do {
         my $error = $@ || 'Unknown failure';
-        Log3 $name, LOG_ERROR, "[$name] - Received invalid JSON: $error";
+        Log3 $name, LOG_ERROR, "[$name] - Received invalid JSON: $error".Dumper($data);
 
     };
     return $json;
@@ -1651,6 +1657,7 @@ sub wsConnect2 {
     #$hash->{DeviceName} = $url;
     $hash->{DeviceName} = 'wss:' . $host . ':' . $port . $path;
     $hash->{SSL}        = 1;
+    $hash->{devioLoglevel} = LOG_RECEIVE;
     DevIo_OpenDev( $hash, 0, "FHEM::Gruenbeck::SoftliqCloud::wsStart", "FHEM::Gruenbeck::SoftliqCloud::wsFail" );
 
     return;
@@ -1664,8 +1671,8 @@ sub wsStart {
     DevIo_SimpleWrite( $hash, '{"protocol":"json","version":1}', 2 );
 
     #succesfully connected - start a timer
-    #my $next = int( gettimeofday() ) + MINUTESECONDS;
-    #InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
+    my $next = int( gettimeofday() ) + MINUTESECONDS;
+    InternalTimer( $next, 'FHEM::Gruenbeck::SoftliqCloud::wsClose', $hash, 0 );
 
     return;
 }
@@ -1909,6 +1916,7 @@ sub wsReadDevIo {
     	return;
     }
     $buf =~ s///xsm;
+    $buf =~ s/\\x\{1e\}//xsm;
     if ( length($buf) == 0 ) {
         return;
     }
@@ -1933,10 +1941,12 @@ sub wsClose {
     return;
 }
 1;
+
 =pod
-=item_helper
-=item_summary Retrieve data from Softliq Cloud (Grünbeck)
-=item_summary_DE Daten aus der Softliq Cloud (Grünbeck) auslesen
+=item helper
+=item summary Retrieve data from Softliq Cloud (Grünbeck)
+=item summary_DE Daten aus der Softliq Cloud (Grünbeck) auslesen
+
 =begin html
 
 <a name="SoftliqCloud"></a>

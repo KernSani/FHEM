@@ -1,4 +1,4 @@
-﻿# $Id: 98_DSBMobile.pm 24089 2021-03-25 22:02:46Z KernSani $
+﻿# $Id: 98_DSBMobile.pm 24168 2021-04-06 21:28:59Z KernSani $
 ##############################################################################
 #
 #      98_DSBMobile.pm
@@ -21,7 +21,7 @@
 #
 ##############################################################################
 #     Changelog:
-#     20.02.2020    Parsing of grouped classes
+#     0.0.08: Minor fix, added versioning
 ##############################################################################
 ##############################################################################
 #     Todo:
@@ -37,6 +37,7 @@ use HttpUtils;
 use Data::Dumper;
 use FHEM::Meta;
 
+my $version = "0.0.08";
 my $missingModul = "";
 
 #eval "use Blocking;1" or $missingModul .= "Blocking ";
@@ -92,6 +93,7 @@ sub DSBMobile_Define($@) {
     Log3 $name, 3, "[$name] DSBMobile defined $name";
 
     $hash->{NAME} = $name;
+    $hash->{VERSION} = $version;
 
     #Temporary death of DSBMobile module ###
 
@@ -210,23 +212,23 @@ sub DSBMobile_getDataCallbackv2 {
 
     my $url = "https://mobileapi.dsbcontrol.de/dsbtimetables?authid=" . $data;
 
-    my $param = {
+    my $newparams = {
         url      => $url,
         method   => "GET",
         hash     => $hash,
         callback => \&DSBMobile_getDataCallback
     };
-    HttpUtils_NonblockingGet($param);
+    HttpUtils_NonblockingGet($newparams);
 
-    my $url = "https://mobileapi.dsbcontrol.de/dsbdocuments?authid=" . $data;
+    $url = "https://mobileapi.dsbcontrol.de/dsbdocuments?authid=" . $data;
 
-    $param = {
+    $newparams = {
         url      => $url,
         method   => "GET",
         hash     => $hash,
         callback => \&DSBMobile_getDocsCallback
     };
-    HttpUtils_NonblockingGet($param);
+    HttpUtils_NonblockingGet($newparams);
     return;
 }
 
