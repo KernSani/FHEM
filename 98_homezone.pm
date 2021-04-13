@@ -143,7 +143,7 @@ sub homezone_Define {
                 . " devStateIcon present:user_available\@green likely:user_available\@lightgreen unlikely:user_unknown\@yellow absent:user_away"
         );
     }
-
+ 
     my $dt = "05:00|morning 10:00|day 14:00|afternoon 18:00|evening 23:00|night";
     my @hm = devspec2array("TYPE=HOMEMODE");
     if ( $hm[1] ) {
