@@ -22,6 +22,7 @@
 #
 ##############################################################################
 #     Changelog:
+#       0.0.15: Maintenance     -   Code cleanup
 #       0.0.14: Bugfix          -   Unnecessary log messages (Execution failed) removed
 #               Bugfix          -   Fixed a bug in attribute validation (occupanyEvent)
 #               Feature         -   Configure that "asleep" roommates trigger "present" (hz_sleepRoommates)
@@ -68,10 +69,22 @@ use warnings;
 
 #use Data::Dumper;
 
-my $version = "0.0.13";
+my $version = "0.0.15";
+
+# some constants
+use constant {
+    LOG_CRITICAL => 0,
+    LOG_ERROR    => 1,
+    LOG_WARNING  => 2,
+    LOG_SEND     => 3,
+    LOG_RECEIVE  => 4,
+    LOG_DEBUG    => 5,
+};
+my $EMPTY = q{};
+my $SPACE = q{ };
 
 ###################################
-sub homezone_Initialize($) {
+sub homezone_Initialize {
     my ($hash) = @_;
     my $name = $hash->{NAME};
 
@@ -100,14 +113,15 @@ sub homezone_Initialize($) {
     $hash->{UndefFn}  = "homezone_Undefine";
     $hash->{NotifyFn} = "homezone_Notify";
     $hash->{AttrFn}   = "homezone_Attr";
-    $hash->{AttrList} = join( " ", @homezone_attr ) . " " . $readingFnAttributes;
+    $hash->{AttrList} = join( $SPACE, @homezone_attr ) . $SPACE . $readingFnAttributes;
+    return;
 }
 
 ###################################
-sub homezone_Define($$) {
+sub homezone_Define {
 
     my ( $hash, $def ) = @_;
-    my @a = split( "[ \t][ \t]*", $def );
+    my @a = split( /[ \t][ \t]*/xsm, $def );
 
     my $usage = "syntax: define <name> homezone";
 
@@ -119,44 +133,50 @@ sub homezone_Define($$) {
     $hash->{VERSION} = $version;
     $hash->{NAME}    = $name;
 
-    CommandAttr( undef, $name . " hz_state 100:present 50:likely 1:unlikely 0:absent" )
-        if ( AttrVal( $name, "hz_state", "" ) eq "" );
-
-    CommandAttr( undef,
-        $name
-            . " devStateIcon present:user_available\@green likely:user_available\@lightgreen unlikely:user_unknown\@yellow absent:user_away"
-    ) if ( AttrVal( $name, "devStateIcon", "" ) eq "" );
+    # set default values for some attributes
+    if ( AttrVal( $name, "hz_state", $EMPTY ) eq $EMPTY ) {
+        CommandAttr( undef, $name . " hz_state 100:present 50:likely 1:unlikely 0:absent" );
+    }
+    if ( AttrVal( $name, "devStateIcon", $EMPTY ) eq $EMPTY ) {
+        CommandAttr( undef,
+            $name
+                . " devStateIcon present:user_available\@green likely:user_available\@lightgreen unlikely:user_unknown\@yellow absent:user_away"
+        );
+    }
 
     my $dt = "05:00|morning 10:00|day 14:00|afternoon 18:00|evening 23:00|night";
     my @hm = devspec2array("TYPE=HOMEMODE");
-    $dt = AttrVal( $hm[1], "homeDayTimes", "" ) if $hm[1];
+    if ( $hm[1] ) {
+        $dt = AttrVal( $hm[1], "homeDayTimes", $EMPTY );
+    }
+    if ( AttrVal( $name, "hz_dayTimes", $EMPTY ) eq $EMPTY ) {
+        CommandAttr( undef, $name . " hz_dayTimes $dt" );
+    }
 
-    CommandAttr( undef, $name . " hz_dayTimes $dt" )
-        if ( AttrVal( $name, "hz_dayTimes", "" ) eq "" );
-
-    return undef;
+    return;
 }
 ###################################
-sub homezone_Undefine($$) {
-
+sub homezone_Undefine {
     my ( $hash, $name ) = @_;
+
     RemoveInternalTimer($hash);
-    return undef;
+    return;
 }
 ###################################
-sub homezone_Notify($$) {
+sub homezone_Notify {
     my ( $hash, $dhash ) = @_;
     my $name = $hash->{NAME};    # own name / hash
     my $dev  = $dhash->{NAME};
 
-    return undef
-        if ( IsDisabled($name) && AttrVal( $name, "hz_disableOnlyCmds", 0 ) == 0 )
-        ;                        # Return without any further action if the module is disabled
+    # Return without any further action if the module is disabled
+    if ( IsDisabled($name) && AttrVal( $name, "hz_disableOnlyCmds", 0 ) == 0 ) {
+        return;
+    }
 
     my $events = deviceEvents( $dhash, 1 );
 
     # Check if children report new state
-    my @children = split( ",", AttrVal( $name, "hz_children", "NA" ) );
+    my @children = split( /,/xsm, AttrVal( $name, "hz_children", "NA" ) );
     if ( grep( /$dev/, @children ) && grep( /occupied/, @{$events} ) ) {
         Log3 $name, 5, "[homezone - $name]: occupied event of child detected";
         my $max = 0;
@@ -279,7 +299,7 @@ sub homezone_Notify($$) {
             my ( $absDev, $absEv ) = split( ":", $o, 2 );
             if ( $dev =~ /$absDev/ && $event =~ /$absEv/ ) {
                 Log3 $name, 5, "[homezone - $name]: set absence in condition " . ReadingsVal( $name, "condition", "" );
-                homezone_setOcc( $hash, 0 );
+                homezone_setOcc( $hash, 0, "absence" );
                 last;
             }
         }
@@ -296,7 +316,7 @@ sub homezone_setOcc($$;$) {
 
     $lastChild = "self" unless $lastChild;
 
-    if ( ReadingsVal( $name, "condition", "" ) eq "closed" && $lastChild ne "timer" ) {
+    if ( ReadingsVal( $name, "condition", "" ) eq "closed" && $lastChild ne "timer" && $lastChild ne "absence" ) {
         $occ = 100;
     }
 
@@ -341,7 +361,7 @@ sub homezone_setOcc($$;$) {
             my %specials = ( "%name" => $name );
             $cmd = EvalSpecials( $cmd, %specials );
             if ( $cmd ne '' ) {
-                Log3 $name, 5, "[homezone - $name]: Executing '$cmd' for $stat";
+
                 my $ret = AnalyzeCommandChain( undef, "$cmd" ) unless ( $cmd eq "" or $cmd =~ m/^{.*}$/s );
                 Log3 $name, 1, "[homezone - $name]: Command execution failed: $ret" if ($ret);
                 $ret = AnalyzePerlCommand( undef, $cmd ) if ( $cmd =~ m/^{.*}$/s );
@@ -614,7 +634,7 @@ sub homezone_Attr($) {
             && $init_done
             )
         {
-            #my @aw = split(" ",ReadingsVal($name,"associatedWith",""));
+            my @aw = split( " ", ReadingsVal( $name, "associatedWith", "" ) );
             my @md = split( " ", $aVal );
             foreach my $ma (@md) {
                 Log3 $name, 1, $ma;
@@ -623,21 +643,21 @@ sub homezone_Attr($) {
                     return "$d is not a valid device" if ( devspec2array($d) eq $d && !$defs{$d} );
                     return "Event not defined for $d" if ( !$e or $e eq "" );
 
-                    #foreach my $awd (devspec2array($d)) {
-                    #   push(@aw, $awd) unless grep (/$d/, @aw);
-                    #}
+                    foreach my $awd ( devspec2array($d) ) {
+                        push( @aw, $awd ) unless grep ( /$d/, @aw );
+                    }
                 }
             }
 
-            #readingsSingleUpdate($hash,"associatedWith",join(" ",@aw),0);
+            readingsSingleUpdate( $hash, "associatedWith", join( " ", @aw ), 0 );
         }
         elsif ( $aName eq "hz_luminanceReading" && $init_done ) {
             my ( $d, $r ) = split( ":", $aVal );
             return "Couldn't get a luminance value for reading $r of device $d" if ReadingsVal( $d, $r, "" ) eq "";
 
-            #my @aw = split(" ",ReadingsVal($name,"associatedWith",""));
-            #push(@aw, $d) unless grep (/$d/, @aw);
-            #readingsSingleUpdate($hash,"associatedWith",join(" ",@aw),0);
+            my @aw = split( " ", ReadingsVal( $name, "associatedWith", "" ) );
+            push( @aw, $d ) unless grep ( /$d/, @aw );
+            readingsSingleUpdate( $hash, "associatedWith", join( " ", @aw ), 0 );
         }
         elsif ( $aName =~ /hz_lumiThreshold.*/ ) {
             return "$aName has to be in the form <low>:<high>" unless $aVal =~ /.*:.*/;
@@ -649,9 +669,9 @@ sub homezone_Attr($) {
             foreach my $a ( split( ",", $aVal ) ) {
                 return "$a is not a homezone Device" if InternalVal( $a, "TYPE", "" ) eq "";
 
-                #my @aw = split(" ",ReadingsVal($name,"associatedWith",""));
-                #push(@aw, $a) unless grep (/$a/, @aw);
-                #readingsSingleUpdate($hash,"associatedWith",join(" ",@aw),0);
+                my @aw = split( " ", ReadingsVal( $name, "associatedWith", "" ) );
+                push( @aw, $a ) unless grep ( /$a/, @aw );
+                readingsSingleUpdate( $hash, "associatedWith", join( " ", @aw ), 0 );
 
             }
         }
@@ -663,6 +683,17 @@ sub homezone_Attr($) {
                 my $err = perlSyntaxCheck( $aVal, %specials );
                 return $err if ($err);
             }
+            my @aw = split( " ", ReadingsVal( $name, "associatedWith", "" ) );
+            my @cmds = split( " ", $aVal );
+            foreach my $cm (@cmds) {
+                Log3( $name, 1, "[homezone - $name]: Checking if '$cm' is a device'" );
+                if ( exists( $defs{$cm} ) ) {
+                    Log3( $name, 1, "[homezone - $name]:Yes, '$cm' is a device'" );
+                    push( @aw, $cm );
+                }
+            }
+
+            readingsSingleUpdate( $hash, "associatedWith", join( " ", @aw ), 0 );
 
         }
         elsif ( $aName eq "disable" ) {
