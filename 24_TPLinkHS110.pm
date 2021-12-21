@@ -91,7 +91,8 @@ sub TPLinkHS110_SendCommandBlocking {
     #		Log3($hash,1,"[TPLINK] Blocking Call running - abort");
     #		return;
     #	}
-    Log3( $hash, 1, "staring Blocking Call for $command / $callback" );
+    Log3( $hash, 5,
+        "TPLinkHS110: $name starting Blocking Call for $command / $callback" );
     $hash->{helper}{RUNNING_PID} = BlockingCall(
         "TPLinkHS110_DoBlocking", $command . "|" . $name,
         $callback, AttrNum( $name, "timeout", 30 ),
@@ -111,7 +112,7 @@ sub TPLinkHS110_DoBlocking($) {
     my ($string) = @_;
     my ( $command, $name ) = split( "\\|", $string );
     my $hash = $defs{$name};
-    Log3( $hash, 1, "Executing $command" );
+    Log3( $hash, 5, "TPLinkHS110: $name Executing $command" );
     my $remote_host = $hash->{HOST};
     my $remote_port = 9999;
     my $c           = encrypt($command);
@@ -185,11 +186,11 @@ sub TPLinkHS110_DoBlocking($) {
 
     if ( !defined($errmsg) ) {
         $data = decrypt($data);
-        Log3( $hash, 1, "Received data $data" );
+        Log3( $hash, 5, "TPLinkHS110: $name Received data $data" );
         return ( $name . "|success|" . $data );
     }
     else {
-        Log3( $hash, 1, "We had an error $errmsg" );
+        Log3( $hash, 5, "TPLinkHS110: $name We had an error $errmsg" );
         return ( $name . "|error|" . $errmsg );
     }
 
@@ -287,7 +288,12 @@ sub TPLinkHS110_getSysInfo($) {
     my ( $name, $result, $data ) = split( "\\|", $string );
     my $hash = $defs{$name};
     delete( $hash->{helper}{RUNNING_PID} );
-    Log3( $hash, 1, "[TPLINK] Result: $result, " . $data );
+    Log3( $hash, 5, "TPLinkHS110: $name  Result: $result, " . $data );
+
+    if ( $result eq "error" ) {
+        Log3( $hash, 1, "TPLinkHS110: $name  getSysInfo failed with:" . $data );
+        return;
+    }
 
     my ( $success, $json, $realtimejson, $errmsg );
     my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
@@ -295,14 +301,12 @@ sub TPLinkHS110_getSysInfo($) {
     $mon++;
     $year += 1900;
 
-    readingsBeginUpdate($hash);
-
     ( $success, $json ) = TPLinkHS110__evaljson( $name, $data );
     if ( !$success ) {
         Log3 $hash, 1, "TPLinkHS110: $name Get failed";    # JV
-        readingsEndUpdate( $hash, 1 );
         return;
     }
+    readingsBeginUpdate($hash);
 
     Log3 $hash, 3,
 "TPLinkHS110: $name Get called. Relay state: $json->{'system'}->{'get_sysinfo'}->{'relay_state'}, RSSI: $json->{'system'}->{'get_sysinfo'}->{'rssi'}";
@@ -394,7 +398,13 @@ sub TPLinkHS110_getRealtime($) {
     my ( $name, $result, $data ) = split( "\\|", $string );
     my $hash = $defs{$name};
     delete( $hash->{helper}{RUNNING_PID} );
-    Log3( $hash, 1, "[TPLINK] Result: $result, " . $data );
+    Log3( $hash, 5, "TPLinkHS110: $name  Result: $result, " . $data );
+
+    if ( $result eq "error" ) {
+        Log3( $hash, 1,
+            "TPLinkHS110: $name  getRealtime failed with:" . $data );
+        return;
+    }
 
     my ( $success, $json, $realtimejson, $errmsg );
 
@@ -419,7 +429,7 @@ sub TPLinkHS110_getRealtime($) {
     my %hwMap          = hwMapping();
     my $hw_ver         = ReadingsVal( $name, "hw_ver", "" );
     if ( $hw_ver eq "" ) {
-        Log3( $hash, 1, "Ohoh, keine HW_VER" );
+        Log3( $hash, 1, "TPLinkHS110: $name Ohoh, keine HW_VER" );
     }
     foreach
       my $key2 ( sort keys %{ $realtimejson->{'emeter'}->{'get_realtime'} } )
@@ -473,7 +483,13 @@ sub TPLinkHS110_getDailyStats($) {
 
     delete( $hash->{helper}{RUNNING_PID} );
 
-    Log3( $hash, 1, "[TPLINK] Result: $result, " . $data );
+    Log3( $hash, 5, "TPLinkHS110: $name  Result: $result, " . $data );
+
+    if ( $result eq "error" ) {
+        Log3( $hash, 1,
+            "TPLinkHS110: $name  getDailyStats failed with:" . $data );
+        return;
+    }
 
     my ( $success, $json, $errmsg );
     my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
