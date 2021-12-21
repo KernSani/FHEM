@@ -55,6 +55,7 @@ sub TPLinkHS110_Initialize($) {
       . "nightmode:on,off "
       . "timeout "
       . "$readingFnAttributes";
+    return;
 }
 
 #####################################
@@ -376,7 +377,7 @@ sub TPLinkHS110_getSysInfo($) {
         or $json->{'system'}->{'get_sysinfo'}->{'model'} eq "KP115(EU)" )
     {
         my $realtimejcommand = '{"emeter":{"get_realtime":{}}}';
-        my $rdata;
+
         #####################################
         #( $errmsg, $rdata ) =
         #  TPLinkHS110_SendCommand( $hash, $realtimejcommand );
@@ -415,7 +416,11 @@ sub TPLinkHS110_getRealtime($) {
     }
     readingsBeginUpdate($hash);
     my %emeterReadings = ();
-
+    my %hwMap          = hwMapping();
+    my $hw_ver         = ReadingsVal( $name, "hw_ver", "" );
+    if ( $hw_ver eq "" ) {
+        Log3( $hash, 1, "Ohoh, keine HW_VER" );
+    }
     foreach
       my $key2 ( sort keys %{ $realtimejson->{'emeter'}->{'get_realtime'} } )
     {
@@ -448,6 +453,11 @@ sub TPLinkHS110_getRealtime($) {
     Log3 $hash, 3,
 "TPLinkHS110: $name Device is an HS110. Got extra realtime data: $emeterReadings{'power'} Watt, $emeterReadings{'voltage'} Volt, $emeterReadings{'current'} Ampere";
 
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
+      localtime(time);
+    $mon++;
+    $year += 1900;
+
     my $command =
       '{"emeter":{"get_daystat":{"month":' . $mon . ',"year":' . $year . '}}}';
     TPLinkHS110_SendCommandBlocking( $hash, $command,
@@ -477,7 +487,7 @@ sub TPLinkHS110_getDailyStats($) {
 
     ( $success, $json ) = TPLinkHS110__evaljson( $name, $data );
 
-    my $hm_ver = ReadingsVal( $name, "hw_ver", "" );
+    my $hw_ver = ReadingsVal( $name, "hw_ver", "" );
 
     if ( $success && $json ) {
         my $total = 0;
@@ -563,7 +573,10 @@ sub TPLinkHS110_Set($$) {
     my $cmdList = "on off";
     my ( $success, $json, $realtimejson );
     return "\"set $name\" needs at least one argument" unless ( defined($cmd) );
-    return if ( $attr{$name}{"disable"} eq "1" );
+    if ( AttrVal( $name, "disable", 0 ) eq "1" ) {
+        return;
+    }
+
     Log3 $hash, 3, "TPLinkHS110: $name Set <" . $cmd . "> called"
       if ( $cmd !~ /\?/ );
 
@@ -788,7 +801,7 @@ sub TPLinkHS110__evaljson($$) {
         $jerr = $@;
     }
 
-    readingsBulkUpdate( $hash, "decode_json", $jerr );
+    #readingsBulkUpdate( $hash, "decode_json", $jerr );
 
     if ($success) {
         return ( $success, $json );
